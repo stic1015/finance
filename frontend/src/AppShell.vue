@@ -4,7 +4,11 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import ProviderBadge from '@/components/ProviderBadge.vue'
 import { useSystemStore } from '@/stores/system'
-import { buildProviderBadgeLabel, buildRuntimeSummary, getHealthHeadline } from '@/utils/display'
+import {
+  buildLocalizedProviderBadgeLabel,
+  buildLocalizedRuntimeSummary,
+  getLocalizedHealthHeadline,
+} from '@/utils/presentation'
 
 const route = useRoute()
 const systemStore = useSystemStore()
@@ -21,22 +25,22 @@ onMounted(() => {
 
 const marketBadgeLabel = computed(() =>
   systemStore.health
-    ? buildProviderBadgeLabel(systemStore.health.market_provider, systemStore.health.market_provider_status)
+    ? buildLocalizedProviderBadgeLabel(systemStore.health.market_provider, systemStore.health.market_provider_status)
     : '',
 )
 
 const newsBadgeLabel = computed(() =>
   systemStore.health
-    ? buildProviderBadgeLabel(systemStore.health.news_provider, systemStore.health.news_provider_status)
+    ? buildLocalizedProviderBadgeLabel(systemStore.health.news_provider, systemStore.health.news_provider_status)
     : '',
 )
 
 const runtimeSummary = computed(() =>
-  systemStore.health ? buildRuntimeSummary(systemStore.health) : '',
+  systemStore.health ? buildLocalizedRuntimeSummary(systemStore.health) : '',
 )
 
 const healthHeadline = computed(() =>
-  systemStore.health ? getHealthHeadline(systemStore.health) : '',
+  systemStore.health ? getLocalizedHealthHeadline(systemStore.health) : '',
 )
 </script>
 

@@ -6,7 +6,7 @@ import {
   buildRuntimeSummary,
   getHealthHeadline,
   getNewsEmptyMessage,
-} from '../src/utils/runtime'
+} from '../src/utils/presentation'
 
 const baseHealth: HealthResponse = {
   status: 'degraded',
@@ -27,7 +27,7 @@ const baseHealth: HealthResponse = {
 
 describe('runtime helpers', () => {
   it('builds provider badge labels from provider and status', () => {
-    expect(buildProviderBadgeLabel('futu', 'fixture')).toBe('futu · fixture')
+    expect(buildProviderBadgeLabel('futu', 'fixture')).toBe('futu 路 fixture')
   })
 
   it('summarizes local runtime modes', () => {

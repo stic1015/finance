@@ -14,6 +14,10 @@ StrategyName = Literal[
     "rsi_bollinger_mean_reversion",
     "donchian_volume_breakout",
     "macd_trend_confirmation",
+    "trend_strength_volatility_filter",
+    "relative_strength_regime_rotation",
+    "volume_price_breakout_risk_budget",
+    "multi_factor_scoring",
 ]
 
 
@@ -97,6 +101,7 @@ class MarketSnapshot(BaseModel):
 class OverviewSection(BaseModel):
     region: Literal["US", "HK", "CN"]
     title: str
+    source_status: SourceStatus
     metrics: list[MarketMetric]
 
 
@@ -113,6 +118,10 @@ class StrategyDefinition(BaseModel):
     name: StrategyName
     label: str
     description: str
+    category: str
+    style_tags: list[str] = Field(default_factory=list)
+    market_scope: list[str] = Field(default_factory=list)
+    logic_summary: str
     default_params: dict[str, float | int]
 
 

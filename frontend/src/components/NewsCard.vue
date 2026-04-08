@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NewsItem } from '@/types'
+import { translateSentiment } from '@/utils/presentation'
 
 defineProps<{
   item: NewsItem
@@ -10,7 +11,7 @@ defineProps<{
   <a class="news-card panel" :href="item.url" target="_blank" rel="noreferrer">
     <div class="top-row">
       <span class="eyebrow">{{ item.source }}</span>
-      <span class="sentiment" :data-tone="item.sentiment">{{ item.sentiment }}</span>
+      <span class="sentiment" :data-tone="item.sentiment">{{ translateSentiment(item.sentiment) }}</span>
     </div>
     <h3>{{ item.title }}</h3>
     <p>{{ item.summary }}</p>

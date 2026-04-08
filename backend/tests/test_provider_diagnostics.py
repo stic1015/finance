@@ -1,13 +1,15 @@
 import asyncio
 import sys
 import types
+from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import app
-from app.schemas.models import NewsItem
+from app.schemas.models import MarketSnapshot, NewsItem, OverviewSection
 from app.services.market_data.service import MarketDataService
+from app.services.market_data.providers.base import ProviderUnavailableError
 from app.services.news.service import NewsService
 
 
@@ -115,6 +117,47 @@ def test_news_service_returns_live_items_when_provider_matches(monkeypatch):
     assert feed.source_status == "live"
     assert feed.empty_reason is None
     assert len(feed.items) == 1
+
+
+def test_market_overview_keeps_hk_and_cn_live_when_us_falls_back(monkeypatch):
+    settings = Settings(MARKET_PROVIDER="futu", ENABLE_FIXTURE_MODE=True)
+    service = MarketDataService(settings)
+
+    def fake_section(region: str):
+        if region == "US":
+            raise ProviderUnavailableError("permission denied")
+        return OverviewSection(region=region, title=f"{region} Session", source_status="live", metrics=[])
+
+    def fake_snapshot(symbol: str):
+        if symbol == "US.AAPL":
+            raise ProviderUnavailableError("permission denied")
+        return MarketSnapshot(
+            symbol=symbol,
+            display_name=symbol,
+            price=100.0,
+            change=1.0,
+            change_percent=1.0,
+            previous_close=99.0,
+            open=99.5,
+            high=101.0,
+            low=98.8,
+            volume=1_000_000,
+            turnover=90_000_000,
+            timestamp=datetime.now(tz=UTC),
+            market_state="OPEN",
+            source_status="live",
+        )
+
+    monkeypatch.setattr(service.primary_provider, "get_overview_section", fake_section)
+    monkeypatch.setattr(service.primary_provider, "get_snapshot", fake_snapshot)
+
+    overview = service.get_market_overview(["US.AAPL", "HK.00700", "SH.600519"])
+
+    assert overview.source_status == "delayed"
+    assert {section.region: section.source_status for section in overview.sections}["US"] == "fixture"
+    assert {section.region: section.source_status for section in overview.sections}["HK"] == "live"
+    assert {item.symbol: item.source_status for item in overview.watchlist}["US.AAPL"] == "fixture"
+    assert {item.symbol: item.source_status for item in overview.watchlist}["HK.00700"] == "live"
 
 
 def test_system_health_exposes_runtime_modes():

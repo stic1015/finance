@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException, Request
 
 from app.schemas.models import BacktestRequest
+from app.services.backtest.strategies import STRATEGIES
 
 router = APIRouter()
+
+
+@router.get("/backtests/strategies")
+async def list_backtest_strategies():
+    return {"data": list(STRATEGIES.values())}
 
 
 @router.post("/backtests")

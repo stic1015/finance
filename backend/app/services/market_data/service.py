@@ -93,6 +93,8 @@ class MarketDataService:
         )
 
     def get_market_overview(self, watchlist: list[str]) -> MarketOverview:
+        if isinstance(self.primary_provider, FutuMarketDataProvider) and self.settings.enable_fixture_mode:
+            return self._build_mixed_market_overview(watchlist)
         try:
             return self.primary_provider.get_market_overview(watchlist)
         except ProviderUnavailableError:
@@ -115,3 +117,46 @@ class MarketDataService:
             if not self.settings.enable_fixture_mode:
                 raise
             return self.fixture_provider.get_candles(symbol, interval=interval, limit=limit)
+
+    def _build_mixed_market_overview(self, watchlist: list[str]) -> MarketOverview:
+        snapshots: list[MarketSnapshot] = []
+        sections = []
+        used_live = False
+        used_fixture = False
+
+        for region in self.primary_provider.region_symbols:
+            try:
+                section = self.primary_provider.get_overview_section(region)
+                used_live = True
+            except ProviderUnavailableError:
+                section = self.fixture_provider.get_overview_section(region)
+                used_fixture = True
+            sections.append(section)
+
+        for symbol in watchlist:
+            try:
+                snapshot = self.primary_provider.get_snapshot(symbol)
+                used_live = True
+            except ProviderUnavailableError:
+                snapshot = self.fixture_provider.get_snapshot(symbol)
+                used_fixture = True
+            snapshots.append(snapshot)
+
+        if used_live and used_fixture:
+            provider = f"{self.primary_provider.source_name}+{self.fixture_provider.source_name}"
+            source_status = "delayed"
+        elif used_live:
+            provider = self.primary_provider.source_name
+            source_status = "live"
+        else:
+            provider = self.fixture_provider.source_name
+            source_status = "fixture"
+
+        return MarketOverview(
+            generated_at=self.fixture_provider.get_market_overview([]).generated_at,
+            provider=provider,
+            source_status=source_status,
+            sections=sections,
+            top_news=[],
+            watchlist=snapshots,
+        )

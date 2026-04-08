@@ -12,6 +12,11 @@ from .base import MarketDataProvider, ProviderUnavailableError
 
 class FutuMarketDataProvider(MarketDataProvider):
     source_name = "futu"
+    region_symbols = {
+        "US": [("US.SPY", "标普500"), ("US.QQQ", "纳指100"), ("US.DIA", "道琼斯")],
+        "HK": [("HK.800000", "恒生指数"), ("HK.800700", "恒生科技"), ("HK.800100", "国企指数")],
+        "CN": [("SH.000001", "上证综指"), ("SZ.399001", "深证成指"), ("SZ.399006", "创业板指")],
+    }
 
     def __init__(self, host: str, port: int, sdk_appdata_path: Path) -> None:
         self.host = host
@@ -34,29 +39,7 @@ class FutuMarketDataProvider(MarketDataProvider):
         return OpenQuoteContext(host=self.host, port=self.port)
 
     def get_market_overview(self, watchlist: list[str]) -> MarketOverview:
-        sections = []
-        region_symbols = {
-            "US": [("US.SPY", "S&P 500"), ("US.QQQ", "Nasdaq 100"), ("US.DIA", "Dow Jones")],
-            "HK": [("HK.800000", "Hang Seng"), ("HK.800700", "Tech Index"), ("HK.800100", "HSCEI")],
-            "CN": [("SH.000001", "Shanghai Composite"), ("SZ.399001", "Shenzhen Component"), ("SZ.399006", "ChiNext")],
-        }
-        with self._get_context() as quote_ctx:
-            for region, metrics in region_symbols.items():
-                codes = [symbol for symbol, _ in metrics]
-                ret, data = quote_ctx.get_market_snapshot(codes)
-                if ret != 0:
-                    raise ProviderUnavailableError(str(data))
-                section_metrics = []
-                for row, (_, label) in zip(data.to_dict("records"), metrics, strict=False):
-                    section_metrics.append(
-                        MarketMetric(
-                            label=label,
-                            value=float(row.get("last_price", 0.0)),
-                            change_percent=float(row.get("change_rate", 0.0)),
-                            symbol=row["code"],
-                        )
-                    )
-                sections.append(OverviewSection(region=region, title=f"{region} Session", metrics=section_metrics))
+        sections = [self.get_overview_section(region) for region in self.region_symbols]
         snapshots = [self.get_snapshot(symbol) for symbol in watchlist]
         return MarketOverview(
             generated_at=datetime.now(tz=UTC),
@@ -65,6 +48,30 @@ class FutuMarketDataProvider(MarketDataProvider):
             sections=sections,
             top_news=[],
             watchlist=snapshots,
+        )
+
+    def get_overview_section(self, region: str) -> OverviewSection:
+        metrics = self.region_symbols[region]
+        with self._get_context() as quote_ctx:
+            codes = [symbol for symbol, _ in metrics]
+            ret, data = quote_ctx.get_market_snapshot(codes)
+            if ret != 0:
+                raise ProviderUnavailableError(str(data))
+        section_metrics = []
+        for row, (_, label) in zip(data.to_dict("records"), metrics, strict=False):
+            section_metrics.append(
+                MarketMetric(
+                    label=label,
+                    value=float(row.get("last_price", 0.0)),
+                    change_percent=float(row.get("change_rate", 0.0)),
+                    symbol=row["code"],
+                )
+            )
+        return OverviewSection(
+            region=region,
+            title={"US": "美股时段", "HK": "港股时段", "CN": "A股时段"}[region],
+            source_status="live",
+            metrics=section_metrics,
         )
 
     def get_snapshot(self, symbol: str) -> MarketSnapshot:

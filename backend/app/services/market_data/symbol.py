@@ -10,13 +10,13 @@ class SymbolParts:
 
 
 KNOWN_DISPLAY_NAMES = {
-    "US.AAPL": "Apple",
-    "US.MSFT": "Microsoft",
-    "US.NVDA": "NVIDIA",
-    "HK.00700": "Tencent",
-    "HK.09988": "Alibaba",
-    "SH.600519": "Kweichow Moutai",
-    "SZ.300750": "CATL",
+    "US.AAPL": "苹果",
+    "US.MSFT": "微软",
+    "US.NVDA": "英伟达",
+    "HK.00700": "腾讯控股",
+    "HK.09988": "阿里巴巴",
+    "SH.600519": "贵州茅台",
+    "SZ.300750": "宁德时代",
 }
 
 

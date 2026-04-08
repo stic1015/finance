@@ -19,9 +19,9 @@ from .base import MarketDataProvider
 
 
 INDEX_MAP = {
-    "US": [("US.SPY", "S&P 500"), ("US.QQQ", "Nasdaq 100"), ("US.DIA", "Dow Jones")],
-    "HK": [("HK.800000", "Hang Seng"), ("HK.800700", "Tech Index"), ("HK.800100", "HSCEI")],
-    "CN": [("SH.000001", "Shanghai Composite"), ("SZ.399001", "Shenzhen Component"), ("SZ.399006", "ChiNext")],
+    "US": [("US.SPY", "标普500"), ("US.QQQ", "纳指100"), ("US.DIA", "道琼斯")],
+    "HK": [("HK.800000", "恒生指数"), ("HK.800700", "恒生科技"), ("HK.800100", "国企指数")],
+    "CN": [("SH.000001", "上证综指"), ("SZ.399001", "深证成指"), ("SZ.399006", "创业板指")],
 }
 
 
@@ -33,18 +33,25 @@ def seeded_rng(symbol: str) -> Random:
 class FixtureMarketDataProvider(MarketDataProvider):
     source_name = "fixture"
 
+    def get_overview_section(self, region: str) -> OverviewSection:
+        metrics = INDEX_MAP[region]
+        section_metrics = []
+        for symbol, label in metrics:
+            rng = seeded_rng(symbol)
+            value = round(rng.uniform(90, 300) * (100 if region != "US" else 20), 2)
+            change_pct = round(rng.uniform(-2.5, 2.5), 2)
+            section_metrics.append(
+                MarketMetric(label=label, value=value, change_percent=change_pct, symbol=symbol)
+            )
+        return OverviewSection(
+            region=region,
+            title={"US": "美股时段", "HK": "港股时段", "CN": "A股时段"}[region],
+            source_status="fixture",
+            metrics=section_metrics,
+        )
+
     def get_market_overview(self, watchlist: list[str]) -> MarketOverview:
-        sections = []
-        for region, metrics in INDEX_MAP.items():
-            section_metrics = []
-            for symbol, label in metrics:
-                rng = seeded_rng(symbol)
-                value = round(rng.uniform(90, 300) * (100 if region != "US" else 20), 2)
-                change_pct = round(rng.uniform(-2.5, 2.5), 2)
-                section_metrics.append(
-                    MarketMetric(label=label, value=value, change_percent=change_pct, symbol=symbol)
-                )
-            sections.append(OverviewSection(region=region, title=f"{region} Session", metrics=section_metrics))
+        sections = [self.get_overview_section(region) for region in INDEX_MAP]
 
         top_news = [
             NewsItem(

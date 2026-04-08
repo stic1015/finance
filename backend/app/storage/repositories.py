@@ -58,7 +58,7 @@ class SQLiteRepository:
             if not conn.execute("SELECT symbol FROM watchlist LIMIT 1").fetchone():
                 conn.executemany(
                     "INSERT OR IGNORE INTO watchlist(symbol) VALUES (?)",
-                    [("US.AAPL",), ("HK.00700",), ("SH.600519",)],
+                    [("HK.00700",), ("SH.600519",), ("SZ.000001",)],
                 )
 
     def save_job(self, job: BacktestResult) -> None:
@@ -116,7 +116,7 @@ class MemoryRepository:
 
     def __init__(self) -> None:
         self.jobs: dict[str, BacktestResult] = {}
-        self.watchlist = ["US.AAPL", "HK.00700", "SH.600519"]
+        self.watchlist = ["HK.00700", "SH.600519", "SZ.000001"]
         self.latest_forecasts: dict[str, dict] = {}
 
     def save_job(self, job: BacktestResult) -> None:

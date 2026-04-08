@@ -18,5 +18,14 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.d.ts", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.d.ts", "tests/**/*.ts"],
+  "exclude": [
+    "src/App.vue",
+    "src/views/MarketOverviewView.vue",
+    "src/views/StockResearchView.vue",
+    "src/views/StrategyLabView.vue",
+    "src/components/StrategyForm.vue",
+    "src/utils/runtime.ts",
+    "src/utils/display.ts"
+  ]
 }

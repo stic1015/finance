@@ -9,7 +9,7 @@ defineProps<{
   <section class="section-panel panel">
     <header>
       <div>
-        <div class="eyebrow">{{ subtitle ?? 'Research Module' }}</div>
+        <div class="eyebrow">{{ subtitle ?? '研究模块' }}</div>
         <h2>{{ title }}</h2>
       </div>
       <slot name="actions" />

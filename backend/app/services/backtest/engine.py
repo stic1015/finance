@@ -28,6 +28,10 @@ def validate_strategy_params(strategy: str, params: dict) -> dict:
     merged = {**defaults, **params}
     if strategy == "moving_average_trend" and merged["fast_window"] >= merged["slow_window"]:
         raise ValueError("fast_window must be smaller than slow_window.")
+    if strategy == "trend_strength_volatility_filter" and merged["vol_short"] >= merged["vol_long"]:
+        raise ValueError("vol_short must be smaller than vol_long.")
+    if strategy == "relative_strength_regime_rotation" and merged["short_lookback"] >= merged["long_lookback"]:
+        raise ValueError("short_lookback must be smaller than long_lookback.")
     return merged
 
 
@@ -91,5 +95,6 @@ def run_backtest(request: BacktestRequest, candles: list[dict] | list) -> Backte
         caveats=[
             "Signals are shifted by one bar to reduce look-ahead bias.",
             "This backtest does not yet model survivorship bias across changing universes.",
+            STRATEGIES[request.strategy].logic_summary,
         ],
     )

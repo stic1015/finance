@@ -33,6 +33,7 @@ export interface MarketMetric {
 export interface OverviewSection {
   region: 'US' | 'HK' | 'CN'
   title: string
+  source_status: SourceStatus
   metrics: MarketMetric[]
 }
 
@@ -60,6 +61,17 @@ export interface MarketOverview {
   sections: OverviewSection[]
   top_news: NewsItem[]
   watchlist: MarketSnapshot[]
+}
+
+export interface StrategyDefinition {
+  name: string
+  label: string
+  description: string
+  category: string
+  style_tags: string[]
+  market_scope: string[]
+  logic_summary: string
+  default_params: Record<string, number>
 }
 
 export interface CandlePoint {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ForecastScenario } from '@/types'
+import { translateScenario } from '@/utils/presentation'
 
 defineProps<{
   scenario: ForecastScenario
@@ -8,9 +9,9 @@ defineProps<{
 
 <template>
   <article class="scenario-card panel" :data-label="scenario.label">
-    <div class="eyebrow">{{ scenario.label }} Scenario</div>
+    <div class="eyebrow">{{ translateScenario(scenario.label) }}场景</div>
     <strong>{{ (scenario.probability * 100).toFixed(1) }}%</strong>
-    <p>{{ (scenario.expected_return * 100).toFixed(2) }}% expected return</p>
+    <p>预期收益 {{ (scenario.expected_return * 100).toFixed(2) }}%</p>
   </article>
 </template>
 
