@@ -1,0 +1,51 @@
+Metadata-Version: 2.4
+Name: finance-quant-lab-backend
+Version: 0.1.0
+Summary: FastAPI backend for Finance Quant Lab.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: apscheduler>=3.10.4
+Requires-Dist: duckdb>=1.0.0
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: httpx>=0.28.0
+Requires-Dist: numpy>=2.1.0
+Requires-Dist: pandas>=2.2.3
+Requires-Dist: pyarrow>=18.0.0
+Requires-Dist: pydantic-settings>=2.6.1
+Requires-Dist: scikit-learn>=1.5.2
+Requires-Dist: uvicorn[standard]>=0.32.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.3; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.24.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0.0; extra == "dev"
+Requires-Dist: ruff>=0.7.1; extra == "dev"
+Provides-Extra: ml
+Requires-Dist: xgboost>=2.1.1; extra == "ml"
+
+# Finance Quant Lab Backend
+
+## Start
+
+```powershell
+python -m venv .venv
+. .\.venv\Scripts\Activate.ps1
+pip install -e .[dev]
+uvicorn app.main:app --reload --port 8000
+```
+
+## Features
+
+- Market overview, snapshot, candles, and websocket updates
+- Related news aggregation with source-aware adapters
+- Async backtest jobs with SQLite metadata
+- 5-trading-day forecast service with probabilistic scenarios
+- Fixture-mode fallback for local UI development
+
+## Optional ML Upgrade
+
+Install the `ml` extra if you want the forecast service to use XGBoost instead of the built-in gradient boosting fallback:
+
+```powershell
+. .\.venv\Scripts\Activate.ps1
+pip install -e .[ml]
+```
