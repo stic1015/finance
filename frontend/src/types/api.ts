@@ -125,6 +125,24 @@ export interface EquityPoint {
   benchmark_equity: number
 }
 
+export interface MonthlyReturnPoint {
+  month: string
+  return_rate: number
+}
+
+export interface TradeLogEntry {
+  timestamp: string
+  action: 'buy' | 'sell' | 'rebalance'
+  price: number
+  exposure: number
+}
+
+export interface PositionSpan {
+  start: string
+  end: string
+  exposure: number
+}
+
 export interface BacktestResult {
   job_id: string
   symbol: string
@@ -135,6 +153,11 @@ export interface BacktestResult {
   status: 'queued' | 'running' | 'completed' | 'failed'
   metrics?: BacktestMetrics | null
   equity_curve: EquityPoint[]
+  monthly_returns: MonthlyReturnPoint[]
+  trade_log: TradeLogEntry[]
+  position_spans: PositionSpan[]
+  excess_return?: number | null
+  strategy_summary?: string | null
   params: Record<string, number | string>
   caveats: string[]
   error?: string | null

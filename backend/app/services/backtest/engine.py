@@ -6,7 +6,15 @@ from uuid import uuid4
 import numpy as np
 import pandas as pd
 
-from app.schemas.models import BacktestMetrics, BacktestRequest, BacktestResult, EquityPoint
+from app.schemas.models import (
+    BacktestMetrics,
+    BacktestRequest,
+    BacktestResult,
+    EquityPoint,
+    MonthlyReturnPoint,
+    PositionSpan,
+    TradeLogEntry,
+)
 from app.services.backtest.strategies import STRATEGIES, build_signal_frame
 
 
@@ -63,6 +71,54 @@ def run_backtest(request: BacktestRequest, candles: list[dict] | list) -> Backte
         )
         for _, row in frame.iterrows()
     ]
+    excess_return = float(frame["equity"].iloc[-1] / frame["benchmark_equity"].iloc[-1] - 1)
+
+    monthly_returns = [
+        MonthlyReturnPoint(month=str(month), return_rate=float(values.add(1).prod() - 1))
+        for month, values in frame.groupby(frame["timestamp"].dt.strftime("%Y-%m"))["strategy_returns"]
+    ]
+
+    trade_log: list[TradeLogEntry] = []
+    trade_rows = frame.loc[trades > 0, ["timestamp", "close", "signal"]].copy()
+    trade_rows["prev_signal"] = frame["signal"].shift(1).fillna(0.0).loc[trade_rows.index]
+    for _, row in trade_rows.iterrows():
+        action = "rebalance"
+        if float(row["signal"]) > float(row["prev_signal"]):
+            action = "buy"
+        elif float(row["signal"]) < float(row["prev_signal"]):
+            action = "sell"
+        trade_log.append(
+            TradeLogEntry(
+                timestamp=row["timestamp"].to_pydatetime().replace(tzinfo=UTC),
+                action=action,
+                price=float(row["close"]),
+                exposure=float(row["signal"]),
+            )
+        )
+
+    position_spans: list[PositionSpan] = []
+    current_start = None
+    current_exposure = 0.0
+    previous_exposure = 0.0
+    for _, row in frame.iterrows():
+        exposure = float(row["signal"])
+        timestamp = row["timestamp"].to_pydatetime().replace(tzinfo=UTC)
+        if exposure != previous_exposure:
+            if current_start is not None and previous_exposure > 0:
+                position_spans.append(
+                    PositionSpan(start=current_start, end=timestamp, exposure=previous_exposure)
+                )
+            current_start = timestamp if exposure > 0 else None
+            current_exposure = exposure
+            previous_exposure = exposure
+    if current_start is not None and current_exposure > 0:
+        position_spans.append(
+            PositionSpan(
+                start=current_start,
+                end=frame["timestamp"].iloc[-1].to_pydatetime().replace(tzinfo=UTC),
+                exposure=current_exposure,
+            )
+        )
 
     sharpe = 0.0
     if float(daily.std()) > 0:
@@ -91,6 +147,11 @@ def run_backtest(request: BacktestRequest, candles: list[dict] | list) -> Backte
         status="completed",
         metrics=metrics,
         equity_curve=equity_curve,
+        monthly_returns=monthly_returns,
+        trade_log=trade_log,
+        position_spans=position_spans,
+        excess_return=excess_return,
+        strategy_summary=STRATEGIES[request.strategy].logic_summary,
         params=params,
         caveats=[
             "Signals are shifted by one bar to reduce look-ahead bias.",

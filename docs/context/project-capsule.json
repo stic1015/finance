@@ -1,0 +1,33 @@
+{
+  "activeRuntime": {
+    "frontendEntry": "frontend/src/main.ts",
+    "frontendShell": "frontend/src/AppShell.vue",
+    "backendMode": "local-only",
+    "frontendDeploy": "vercel"
+  },
+  "marketScope": {
+    "frontendPrimary": ["HK", "SH", "SZ"],
+    "frontendExcludedForNow": ["US"],
+    "backendCompatible": ["US", "HK", "SH", "SZ"]
+  },
+  "backendStatus": {
+    "overviewSupportsPartialDegrade": true,
+    "hkAndCnCanBeLive": true,
+    "usMayFallbackIndependently": true,
+    "strategyPackExpanded": true
+  },
+  "frontendRisks": [
+    "active page files contain corrupted copy",
+    "old and new page implementations coexist",
+    "no formal i18n baseline exists yet",
+    "watch and alert workflows are not implemented"
+  ],
+  "nextPriorities": [
+    "rebuild clean active pages",
+    "add zh-CN and en-US i18n foundation",
+    "turn homepage into an opportunity discovery surface",
+    "upgrade stock research conclusions",
+    "upgrade strategy lab result panels",
+    "add local watchlist and alert workflows"
+  ]
+}

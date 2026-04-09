@@ -148,6 +148,24 @@ class BacktestMetrics(BaseModel):
     benchmark_return: float
 
 
+class MonthlyReturnPoint(BaseModel):
+    month: str
+    return_rate: float
+
+
+class TradeLogEntry(BaseModel):
+    timestamp: datetime
+    action: Literal["buy", "sell", "rebalance"]
+    price: float
+    exposure: float
+
+
+class PositionSpan(BaseModel):
+    start: datetime
+    end: datetime
+    exposure: float
+
+
 class EquityPoint(BaseModel):
     timestamp: datetime
     equity: float
@@ -164,6 +182,11 @@ class BacktestResult(BaseModel):
     status: Literal["queued", "running", "completed", "failed"]
     metrics: BacktestMetrics | None = None
     equity_curve: list[EquityPoint] = Field(default_factory=list)
+    monthly_returns: list[MonthlyReturnPoint] = Field(default_factory=list)
+    trade_log: list[TradeLogEntry] = Field(default_factory=list)
+    position_spans: list[PositionSpan] = Field(default_factory=list)
+    excess_return: float | None = None
+    strategy_summary: str | None = None
     params: dict[str, float | int] = Field(default_factory=dict)
     caveats: list[str] = Field(default_factory=list)
     error: str | None = None

@@ -43,3 +43,7 @@ def test_backtest_runs_without_lookahead_crash():
     assert result.status == "completed"
     assert result.metrics is not None
     assert result.metrics.trade_count >= 0
+    assert result.monthly_returns
+    assert result.trade_log is not None
+    assert result.position_spans is not None
+    assert result.strategy_summary
