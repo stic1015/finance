@@ -12,7 +12,7 @@ import SectionPanel from '@/components/SectionPanel.vue'
 import { useLocaleStore } from '@/stores/locale'
 import { useSystemStore } from '@/stores/system'
 import { useWatchStore } from '@/stores/watch'
-import type { MarketOverview } from '@/types'
+import type { MarketOverview, NewsFeedResponse } from '@/types'
 import { compactNumber, formatCurrency, formatMarketPercent } from '@/utils/format'
 import { buildLocalizedProviderBadgeLabel, buildLocalizedRuntimeSummary, translateStatus } from '@/utils/presentation'
 
@@ -20,6 +20,7 @@ const localeStore = useLocaleStore()
 const systemStore = useSystemStore()
 const watchStore = useWatchStore()
 const overview = ref<MarketOverview | null>(null)
+const marketBriefs = ref<NewsFeedResponse | null>(null)
 const loading = ref(false)
 const error = ref('')
 const filter = ref<'all' | 'live' | 'news' | 'backtest'>('all')
@@ -28,7 +29,12 @@ async function loadOverview() {
   loading.value = true
   error.value = ''
   try {
-    overview.value = await apiGet<MarketOverview>('/api/markets/overview')
+    const [overviewResponse, briefsResponse] = await Promise.all([
+      apiGet<MarketOverview>('/api/markets/overview'),
+      apiGet<NewsFeedResponse>('/api/markets/briefs'),
+    ])
+    overview.value = overviewResponse
+    marketBriefs.value = briefsResponse
   } catch (err) {
     error.value = err instanceof Error ? err.message : localeStore.t('common.loading')
   } finally {
@@ -168,6 +174,13 @@ function addToWatch(symbol: string) {
           </div>
           <div v-else class="panel loading-block">{{ localeStore.t('common.noAttributedNews') }}</div>
         </SectionPanel>
+
+        <SectionPanel title="行业实时快讯" subtitle="市场与行业层面的快速线索">
+          <div v-if="marketBriefs?.items.length" class="news-grid">
+            <NewsCard v-for="item in marketBriefs.items" :key="item.id" :item="item" />
+          </div>
+          <div v-else class="panel loading-block">当前暂无行业快讯。</div>
+        </SectionPanel>
       </div>
     </template>
   </div>
@@ -223,7 +236,7 @@ function addToWatch(symbol: string) {
 }
 
 .bottom-grid {
-  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-columns: 0.75fr 1fr 1fr;
 }
 
 .metrics-grid {

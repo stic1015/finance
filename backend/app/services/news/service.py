@@ -15,6 +15,19 @@ from app.services.news.providers.keyword import KeywordNewsProvider
 
 class NewsService:
     sample_symbols = ["US.AAPL", "HK.00700", "SH.600519"]
+    sector_topics = {
+        "HK.00700": ["腾讯", "港股互联网", "游戏"],
+        "HK.09988": ["阿里巴巴", "港股互联网", "电商"],
+        "HK.03690": ["美团", "本地生活", "消费"],
+        "HK.01810": ["小米", "消费电子", "智能硬件"],
+        "HK.00981": ["中芯国际", "半导体", "芯片"],
+        "SH.600519": ["白酒", "消费", "贵州茅台"],
+        "SH.601318": ["保险", "金融", "中国平安"],
+        "SH.600036": ["银行", "金融", "招商银行"],
+        "SZ.300750": ["新能源车", "动力电池", "宁德时代"],
+        "SZ.002594": ["新能源车", "比亚迪", "整车"],
+        "SZ.000001": ["银行", "金融", "平安银行"],
+    }
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -48,8 +61,10 @@ class NewsService:
         normalized = [alias for alias in aliases if "." in alias and alias.count(".") == 1]
         alpha_items = []
         keyword_items = []
+        sector_items = []
         provider = self.alpha_provider.source_name
         source_status = "live"
+        feed_type = "stock"
         empty_reason: str | None = None
         message: str | None = None
 
@@ -67,23 +82,34 @@ class NewsService:
             empty_reason = "provider_unavailable"
             message = f"Alpha Vantage request failed: {exc}"
 
-        keyword_items = await self.keyword_provider.search(aliases)
-        merged = self._dedupe(alpha_items + keyword_items)
+        keyword_items = await self.keyword_provider.search(aliases, matched_symbols=[symbol])
+        if not alpha_items and not keyword_items:
+            sector_items = await self.keyword_provider.search(self.sector_topics_for(symbol), matched_symbols=[symbol])
+        merged = self._dedupe(alpha_items + keyword_items + sector_items)
         sorted_items = sorted(merged, key=lambda item: item.published_at, reverse=True)
 
         if alpha_items and keyword_items:
             provider = f"{self.alpha_provider.source_name}+{self.keyword_provider.source_name}"
             source_status = "live"
+            feed_type = "mixed"
             message = "Direct attributed headlines were enriched with alias-based keyword backfill."
         elif alpha_items:
             provider = self.alpha_provider.source_name
             source_status = "live"
+            feed_type = "stock"
             message = "Live attributed headlines are available from Alpha Vantage."
         elif keyword_items:
             provider = self.keyword_provider.source_name
             source_status = "delayed"
+            feed_type = "stock"
             empty_reason = "keyword_only"
             message = "No directly attributed headlines were found. Showing alias-based fallback coverage."
+        elif sector_items:
+            provider = self.keyword_provider.source_name
+            source_status = "delayed"
+            feed_type = "sector"
+            empty_reason = "sector_only"
+            message = "No stock-specific headlines were found. Showing sector briefs instead."
         elif not self.alpha_provider.api_key:
             source_status = "unavailable"
             empty_reason = "missing_api_key"
@@ -100,10 +126,29 @@ class NewsService:
             symbol=symbol,
             provider=provider,
             source_status=source_status,
+            feed_type=feed_type,
             items=sorted_items,
             empty_reason=empty_reason,
             message=message,
         )
+
+    async def get_market_briefs(self) -> NewsFeedResponse:
+        items = await self.keyword_provider.search(
+            ["港股", "A股", "半导体", "新能源车", "金融"],
+            matched_symbols=["HK", "CN"],
+        )
+        return NewsFeedResponse(
+            symbol="MARKET",
+            provider=self.keyword_provider.source_name if items else "none",
+            source_status="delayed" if items else "unavailable",
+            feed_type="sector",
+            items=items,
+            empty_reason=None if items else "no_results",
+            message="Industry and market briefs." if items else "No market briefs available.",
+        )
+
+    def sector_topics_for(self, symbol: str) -> list[str]:
+        return self.sector_topics.get(symbol, aliases_for(symbol))
 
     def _dedupe(self, items: list[NewsItem]) -> list[NewsItem]:
         seen: set[str] = set()

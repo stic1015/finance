@@ -24,3 +24,10 @@ async def get_market_overview(request: Request):
             top_news.append(item)
     overview.top_news = sorted(top_news, key=lambda item: item.published_at, reverse=True)[:6]
     return {"data": overview}
+
+
+@router.get("/markets/briefs")
+async def get_market_briefs(request: Request):
+    news_service = request.app.state.news_service
+    briefs = await news_service.get_market_briefs()
+    return {"data": briefs}

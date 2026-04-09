@@ -60,6 +60,7 @@ class NewsFeedResponse(BaseModel):
     symbol: str
     provider: str
     source_status: SourceStatus
+    feed_type: Literal["stock", "sector", "mixed"] = "stock"
     items: list[NewsItem] = Field(default_factory=list)
     empty_reason: str | None = None
     message: str | None = None

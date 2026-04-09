@@ -28,6 +28,7 @@ const symbol = computed(() => String(route.params.symbol ?? 'HK.00700'))
 const snapshot = ref<MarketSnapshot | null>(null)
 const candles = ref<CandleSeries | null>(null)
 const newsFeed = ref<NewsFeedResponse | null>(null)
+const marketBriefs = ref<NewsFeedResponse | null>(null)
 const forecast = ref<Forecast5DResult | null>(null)
 const backtest = ref<BacktestResult | null>(null)
 const overview = ref<MarketOverview | null>(null)
@@ -143,6 +144,7 @@ async function loadResearch() {
     candles.value = candleResponse
     newsFeed.value = newsResponse
     overview.value = overviewResponse
+    marketBriefs.value = await apiGet<NewsFeedResponse>('/api/markets/briefs')
     forecast.value = await apiPost<Forecast5DResult>('/api/forecasts/5d', {
       symbol: symbol.value,
       interval: '1d',
@@ -269,6 +271,9 @@ onMounted(() => {
             </div>
             <div v-if="newsItems.length" class="news-grid">
               <NewsCard v-for="item in newsItems" :key="item.id" :item="item" />
+            </div>
+            <div v-else-if="marketBriefs?.items.length" class="news-grid">
+              <NewsCard v-for="item in marketBriefs.items" :key="item.id" :item="item" />
             </div>
             <div v-else class="empty-state panel">{{ newsEmptyMessage }}</div>
           </SectionPanel>

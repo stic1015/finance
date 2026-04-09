@@ -12,11 +12,11 @@ from app.schemas.models import NewsItem
 class KeywordNewsProvider:
     source_name = "keyword"
 
-    async def search(self, aliases: list[str]) -> list[NewsItem]:
+    async def search(self, aliases: list[str], matched_symbols: list[str] | None = None) -> list[NewsItem]:
         if not aliases:
             return []
 
-        query_terms = [alias for alias in aliases if alias and "." not in alias][:2]
+        query_terms = [alias for alias in aliases if alias and "." not in alias][:4]
         if not query_terms:
             return []
 
@@ -52,7 +52,7 @@ class KeywordNewsProvider:
                     published_at=published_at,
                     sentiment="neutral",
                     score=0.0,
-                    matched_symbols=aliases,
+                    matched_symbols=matched_symbols or aliases,
                 )
             )
         return items

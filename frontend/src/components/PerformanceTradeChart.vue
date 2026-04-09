@@ -22,6 +22,9 @@ function buildTradeMarkers() {
       return {
         coord: [index, trade.price],
         value: trade.action,
+        actionLabel: trade.action === 'buy' ? '买入' : trade.action === 'sell' ? '卖出' : '调仓',
+        price: trade.price,
+        exposure: trade.exposure,
         itemStyle: {
           color: trade.action === 'buy' ? '#2fe08b' : trade.action === 'sell' ? '#ff6b7a' : '#ffbf5a',
         },
@@ -33,9 +36,28 @@ function buildTradeMarkers() {
 function renderChart() {
   if (!container.value || !props.points.length) return
   chart ??= echarts.init(container.value)
+  const markers = buildTradeMarkers()
   chart.setOption({
     backgroundColor: 'transparent',
-    tooltip: { trigger: 'axis' },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const lines = [`${params[0]?.axisValueLabel ?? ''}`]
+        for (const param of params) {
+          if (param.seriesName === 'Trades' && param.data?.meta) {
+            lines.push(`${param.data.meta.actionLabel} | 价格 ${param.data.meta.price.toFixed(2)} | 仓位 ${param.data.meta.exposure.toFixed(2)}`)
+          } else {
+            lines.push(`${param.seriesName}: ${Number(param.data).toFixed(2)}`)
+          }
+        }
+        return lines.join('<br/>')
+      },
+    },
+    legend: {
+      top: 0,
+      textStyle: { color: '#98afc5' },
+      data: ['Strategy', 'Benchmark', 'Trades'],
+    },
     grid: { left: 20, right: 20, top: 20, bottom: 20, containLabel: true },
     textStyle: { color: '#98afc5', fontFamily: 'IBM Plex Sans' },
     xAxis: {
@@ -66,9 +88,10 @@ function renderChart() {
       {
         name: 'Trades',
         type: 'scatter',
-        data: buildTradeMarkers().map((marker) => ({
+        data: markers.map((marker) => ({
           value: marker!.coord,
           itemStyle: marker!.itemStyle,
+          meta: marker,
         })),
         symbolSize: 12,
       },

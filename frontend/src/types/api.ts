@@ -18,6 +18,7 @@ export interface NewsFeedResponse {
   symbol: string
   provider: string
   source_status: SourceStatus
+  feed_type: 'stock' | 'sector' | 'mixed'
   items: NewsItem[]
   empty_reason?: string | null
   message?: string | null
