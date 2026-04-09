@@ -1,5 +1,6 @@
 export const zhCN = {
   common: {
+    all: '\u5168\u90e8',
     marketOverview: '\u5e02\u573a\u603b\u89c8',
     stockResearch: '\u4e2a\u80a1\u7814\u7a76',
     strategyLab: '\u7b56\u7565\u5b9e\u9a8c\u5ba4',
@@ -14,6 +15,8 @@ export const zhCN = {
     whyWatch: '\u4e3a\u4ec0\u4e48\u503c\u5f97\u770b',
     addToWatch: '\u52a0\u5165\u89c2\u5bdf',
     createAlert: '\u521b\u5efa\u63d0\u9192',
+    search: '\u641c\u7d22',
+    searchPlaceholder: '\u8f93\u5165\u6e2f\u80a1/A\u80a1\u4ee3\u7801\uff0c\u4f8b\u5982 HK.00700 / 600519',
     language: '\u8bed\u8a00',
     zhCN: '\u7b80\u4f53\u4e2d\u6587',
     enUS: 'English'
@@ -23,7 +26,9 @@ export const zhCN = {
     runtimeHealthy: '\u672c\u5730\u7814\u7a76\u8fd0\u884c\u6b63\u5e38\u3002',
     runtimeDegraded: '\u5f53\u524d\u8fd0\u884c\u73af\u5883\u5df2\u964d\u7ea7\uff0c\u4f46\u4e3b\u6d41\u7a0b\u4ecd\u53ef\u7ee7\u7eed\u3002',
     storage: '\u5b58\u50a8',
-    jobs: '\u4efb\u52a1'
+    jobs: '\u4efb\u52a1',
+    threadPool: '\u7ebf\u7a0b\u6c60',
+    processPool: '\u8fdb\u7a0b\u6c60'
   },
   overview: {
     eyebrow: '\u8de8\u5e02\u573a\u4fe1\u53f7\u9762\u677f',
@@ -69,7 +74,22 @@ export const zhCN = {
     marketState: '\u4ea4\u6613\u72b6\u6001',
     scoreReasons: '\u7ed3\u8bba\u6458\u8981',
     watchlistAction: '\u52a0\u5165\u89c2\u5bdf',
-    alertAction: '\u521b\u5efa\u63d0\u9192'
+    alertAction: '\u521b\u5efa\u63d0\u9192',
+    intradayMove: '\u65e5\u5185\u6ce2\u52a8',
+    dominantScenario: '\u4e3b\u5bfc\u573a\u666f',
+    newsClues: '\u65b0\u95fb\u7ebf\u7d22',
+    restrictedRealtime: '\u5f53\u524d\u5e76\u975e\u5b8c\u6574\u5b9e\u65f6\u6743\u9650',
+    strongerThanYesterday: '\u4ef7\u683c\u5f3a\u4e8e\u6628\u65e5',
+    weakerThanYesterday: '\u4ef7\u683c\u5f31\u4e8e\u6628\u65e5',
+    above20d: '\u4ef7\u683c\u7ad9\u4e0a 20 \u65e5\u5747\u503c',
+    below20d: '\u4ef7\u683c\u4f4e\u4e8e 20 \u65e5\u5747\u503c',
+    daylineStrong: '\u65e5\u7ebf\u7ed3\u6784\u504f\u5f3a',
+    daylineWeak: '\u65e5\u7ebf\u7ed3\u6784\u504f\u5f31',
+    newsSourceUnavailable: '\u65b0\u95fb\u6e90\u4e0d\u53ef\u7528',
+    bearishRisk: '\u4e0b\u884c\u60c5\u666f\u6982\u7387\u504f\u9ad8',
+    usRemoved: '\u5f53\u524d\u524d\u7aef\u7814\u7a76\u95ed\u73af\u9ed8\u8ba4\u4ec5\u652f\u6301\u6e2f\u80a1\u4e0e A \u80a1\uff0c\u7f8e\u80a1\u5165\u53e3\u5df2\u4ece\u4e3b\u6d41\u7a0b\u79fb\u9664\u3002',
+    priceMoveAlert: '\u5355\u65e5\u6ce2\u52a8',
+    newsAlert: '\u51fa\u73b0\u65b0\u7684\u53ef\u5f52\u56e0\u65b0\u95fb'
   },
   strategy: {
     eyebrow: '\u673a\u6784\u5316\u7b56\u7565\u6a21\u677f',

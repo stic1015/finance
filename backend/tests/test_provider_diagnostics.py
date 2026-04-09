@@ -76,6 +76,11 @@ def test_futu_diagnose_reports_live_when_sdk_and_socket_are_ready(monkeypatch):
 
 def test_news_service_reports_missing_key_and_no_results(monkeypatch):
     missing_key_service = NewsService(Settings(ALPHA_VANTAGE_API_KEY=""))
+
+    async def no_keyword_results(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(missing_key_service.keyword_provider, "search", no_keyword_results)
     missing_key_feed = asyncio.run(missing_key_service.get_news_for_symbol("US.AAPL"))
 
     assert missing_key_feed.source_status == "unavailable"
@@ -87,6 +92,7 @@ def test_news_service_reports_missing_key_and_no_results(monkeypatch):
         return []
 
     monkeypatch.setattr(live_service.alpha_provider, "search", no_results)
+    monkeypatch.setattr(live_service.keyword_provider, "search", no_keyword_results)
     live_feed = asyncio.run(live_service.get_news_for_symbol("US.AAPL"))
 
     assert live_feed.source_status == "live"
@@ -112,6 +118,11 @@ def test_news_service_returns_live_items_when_provider_matches(monkeypatch):
         ]
 
     monkeypatch.setattr(service.alpha_provider, "search", live_results)
+
+    async def no_keyword_results(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(service.keyword_provider, "search", no_keyword_results)
     feed = asyncio.run(service.get_news_for_symbol("US.AAPL"))
 
     assert feed.source_status == "live"

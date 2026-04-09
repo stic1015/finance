@@ -58,7 +58,38 @@ class SQLiteRepository:
             if not conn.execute("SELECT symbol FROM watchlist LIMIT 1").fetchone():
                 conn.executemany(
                     "INSERT OR IGNORE INTO watchlist(symbol) VALUES (?)",
-                    [("HK.00700",), ("SH.600519",), ("SZ.000001",)],
+                    [
+                        ("HK.00700",),
+                        ("HK.09988",),
+                        ("HK.03690",),
+                        ("HK.01810",),
+                        ("HK.00981",),
+                        ("HK.01211",),
+                        ("HK.02318",),
+                        ("HK.01398",),
+                        ("HK.03988",),
+                        ("HK.00939",),
+                        ("HK.00005",),
+                        ("HK.01024",),
+                        ("HK.00941",),
+                        ("HK.03888",),
+                        ("HK.06618",),
+                        ("SH.600519",),
+                        ("SH.601318",),
+                        ("SH.600036",),
+                        ("SH.600276",),
+                        ("SH.601398",),
+                        ("SH.600900",),
+                        ("SH.600309",),
+                        ("SH.601899",),
+                        ("SH.601288",),
+                        ("SH.600030",),
+                        ("SZ.000001",),
+                        ("SZ.000333",),
+                        ("SZ.000651",),
+                        ("SZ.002594",),
+                        ("SZ.300750",),
+                    ],
                 )
 
     def save_job(self, job: BacktestResult) -> None:
@@ -116,7 +147,38 @@ class MemoryRepository:
 
     def __init__(self) -> None:
         self.jobs: dict[str, BacktestResult] = {}
-        self.watchlist = ["HK.00700", "SH.600519", "SZ.000001"]
+        self.watchlist = [
+            "HK.00700",
+            "HK.09988",
+            "HK.03690",
+            "HK.01810",
+            "HK.00981",
+            "HK.01211",
+            "HK.02318",
+            "HK.01398",
+            "HK.03988",
+            "HK.00939",
+            "HK.00005",
+            "HK.01024",
+            "HK.00941",
+            "HK.03888",
+            "HK.06618",
+            "SH.600519",
+            "SH.601318",
+            "SH.600036",
+            "SH.600276",
+            "SH.601398",
+            "SH.600900",
+            "SH.600309",
+            "SH.601899",
+            "SH.601288",
+            "SH.600030",
+            "SZ.000001",
+            "SZ.000333",
+            "SZ.000651",
+            "SZ.002594",
+            "SZ.300750",
+        ]
         self.latest_forecasts: dict[str, dict] = {}
 
     def save_job(self, job: BacktestResult) -> None:

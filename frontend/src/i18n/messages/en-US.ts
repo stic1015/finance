@@ -1,5 +1,6 @@
 export const enUS = {
   common: {
+    all: 'All',
     marketOverview: 'Market Overview',
     stockResearch: 'Stock Research',
     strategyLab: 'Strategy Lab',
@@ -14,6 +15,8 @@ export const enUS = {
     whyWatch: 'Why It Matters',
     addToWatch: 'Add to Watch',
     createAlert: 'Create Alert',
+    search: 'Search',
+    searchPlaceholder: 'Enter HK/A-share code, e.g. HK.00700 / 600519',
     language: 'Language',
     zhCN: '简体中文',
     enUS: 'English'
@@ -23,7 +26,9 @@ export const enUS = {
     runtimeHealthy: 'Local research runtime is healthy.',
     runtimeDegraded: 'Runtime is degraded, but the core workflow is still available.',
     storage: 'Storage',
-    jobs: 'Jobs'
+    jobs: 'Jobs',
+    threadPool: 'Thread Pool',
+    processPool: 'Process Pool'
   },
   overview: {
     eyebrow: 'Cross-market Signal Board',
@@ -69,7 +74,22 @@ export const enUS = {
     marketState: 'Market State',
     scoreReasons: 'Research Summary',
     watchlistAction: 'Add to Watch',
-    alertAction: 'Create Alert'
+    alertAction: 'Create Alert',
+    intradayMove: 'Intraday Move',
+    dominantScenario: 'Dominant Scenario',
+    newsClues: 'News Clues',
+    restrictedRealtime: 'Realtime permission is incomplete',
+    strongerThanYesterday: 'Price is stronger than yesterday',
+    weakerThanYesterday: 'Price is weaker than yesterday',
+    above20d: 'Price is above the 20-day mean',
+    below20d: 'Price is below the 20-day mean',
+    daylineStrong: 'Daily structure is strong',
+    daylineWeak: 'Daily structure is weak',
+    newsSourceUnavailable: 'News source unavailable',
+    bearishRisk: 'Bearish scenario probability is elevated',
+    usRemoved: 'The primary frontend research loop currently supports HK and A-share only. US entry is removed from the main flow.',
+    priceMoveAlert: 'Daily move',
+    newsAlert: 'New attributable news detected'
   },
   strategy: {
     eyebrow: 'Institutional Strategy Pack',

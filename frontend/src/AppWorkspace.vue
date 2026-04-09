@@ -4,6 +4,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import ProviderBadge from '@/components/ProviderBadge.vue'
+import StockCodeSearch from '@/components/StockCodeSearch.vue'
 import { useLocaleStore } from '@/stores/locale'
 import { useSystemStore } from '@/stores/system'
 import {
@@ -54,6 +55,7 @@ const healthHeadline = computed(() =>
         <span class="eyebrow">{{ localeStore.t('shell.eyebrow') }}</span>
         <h1>{{ pageTitle }}</h1>
       </div>
+      <StockCodeSearch />
       <nav>
         <RouterLink to="/">{{ localeStore.t('common.marketOverview') }}</RouterLink>
         <RouterLink to="/stocks/HK.00700">{{ localeStore.t('common.stockResearch') }}</RouterLink>
@@ -90,18 +92,18 @@ const healthHeadline = computed(() =>
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: 1.2fr 1fr auto;
+  grid-template-columns: 0.9fr 1fr 0.8fr auto;
   align-items: center;
-  gap: 24px;
-  padding-top: 24px;
-  padding-bottom: 24px;
+  gap: 16px;
+  padding-top: 16px;
+  padding-bottom: 16px;
   backdrop-filter: blur(14px);
 }
 
 .brand-lockup h1 {
   margin: 6px 0 0;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: clamp(1.8rem, 2vw, 2.5rem);
+  font-size: clamp(1.4rem, 1.6vw, 2rem);
 }
 
 nav {
@@ -126,7 +128,7 @@ nav a.router-link-active {
 
 .status-zone {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   justify-items: end;
 }
 
