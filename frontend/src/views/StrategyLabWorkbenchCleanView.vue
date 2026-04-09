@@ -5,10 +5,10 @@ import { apiGet, apiPost } from '@/api/client'
 import CompareRunsTable from '@/components/CompareRunsTable.vue'
 import MetricTile from '@/components/MetricTile.vue'
 import MonthlyHeatmap from '@/components/MonthlyHeatmap.vue'
-import PerformanceChart from '@/components/PerformanceChart.vue'
+import PerformanceTradeChart from '@/components/PerformanceTradeChart.vue'
 import ResearchStrategyFormClean from '@/components/ResearchStrategyFormClean.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
-import TradeLogTable from '@/components/TradeLogTable.vue'
+import TradeExecutionTable from '@/components/TradeExecutionTable.vue'
 import { FALLBACK_STRATEGIES } from '@/constants/strategies'
 import { useLocaleStore } from '@/stores/locale'
 import type { BacktestResult, StrategyDefinition } from '@/types'
@@ -100,12 +100,12 @@ onMounted(() => {
             <MetricTile :label="localeStore.t('strategy.tradeCount')" :value="String(latestRun.metrics.trade_count)" />
             <MetricTile :label="localeStore.t('strategy.excessReturn')" :value="latestRun.excess_return != null ? formatPercent(latestRun.excess_return) : '-'" />
           </div>
-          <PerformanceChart :points="latestRun.equity_curve" />
+          <PerformanceTradeChart :points="latestRun.equity_curve" :trades="latestRun.trade_log" />
           <SectionPanel :title="localeStore.t('strategy.monthlyHeatmap')">
             <MonthlyHeatmap :points="latestRun.monthly_returns" />
           </SectionPanel>
           <SectionPanel :title="localeStore.t('strategy.trades')">
-            <TradeLogTable :rows="latestRun.trade_log" />
+            <TradeExecutionTable :rows="latestRun.trade_log" />
           </SectionPanel>
           <SectionPanel :title="localeStore.t('strategy.compare')">
             <CompareRunsTable :runs="runHistory" />

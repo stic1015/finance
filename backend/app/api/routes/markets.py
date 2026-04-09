@@ -12,7 +12,10 @@ async def get_market_overview(request: Request):
     top_news = []
     seen: set[str] = set()
     for symbol in repository.list_watchlist():
-        feed = await news_service.get_news_for_symbol(symbol)
+        try:
+            feed = await news_service.get_news_for_symbol(symbol)
+        except Exception:
+            continue
         for item in feed.items:
             key = item.url or item.id
             if key in seen:

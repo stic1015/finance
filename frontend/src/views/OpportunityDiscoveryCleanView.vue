@@ -7,6 +7,7 @@ import AlertCenter from '@/components/AlertCenter.vue'
 import MetricTile from '@/components/MetricTile.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import ProviderBadge from '@/components/ProviderBadge.vue'
+import RankedSymbolTable from '@/components/RankedSymbolTable.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
 import { useLocaleStore } from '@/stores/locale'
 import { useSystemStore } from '@/stores/system'
@@ -128,32 +129,11 @@ function addToWatch(symbol: string) {
 
         <div class="content-grid">
           <SectionPanel :title="localeStore.t('overview.hotList')">
-            <div class="watchlist-grid compact-grid">
-              <RouterLink v-for="snapshot in hotList" :key="`hot-${snapshot.symbol}`" class="watch-card panel" :to="`/stocks/${snapshot.symbol}`">
-                <div class="watch-top">
-                  <div class="eyebrow">{{ snapshot.symbol }}</div>
-                  <ProviderBadge :label="translateStatus(snapshot.source_status)" :status="snapshot.source_status" />
-                </div>
-                <strong>{{ formatCurrency(snapshot.price) }}</strong>
-                <span :class="snapshot.change_percent >= 0 ? 'status-positive' : 'status-negative'">
-                  {{ formatMarketPercent(snapshot.change_percent) }}
-                </span>
-                <button type="button" @click.prevent="addToWatch(snapshot.symbol)">{{ localeStore.t('common.addToWatch') }}</button>
-              </RouterLink>
-            </div>
+            <RankedSymbolTable :items="hotList" />
           </SectionPanel>
 
           <SectionPanel :title="localeStore.t('overview.movers')">
-            <div class="watchlist-grid compact-grid">
-              <RouterLink v-for="snapshot in movers" :key="`move-${snapshot.symbol}`" class="watch-card panel" :to="`/stocks/${snapshot.symbol}`">
-                <div class="eyebrow">{{ snapshot.display_name }}</div>
-                <strong>{{ formatCurrency(snapshot.price) }}</strong>
-                <span :class="snapshot.change_percent >= 0 ? 'status-positive' : 'status-negative'">
-                  {{ formatMarketPercent(snapshot.change_percent) }}
-                </span>
-                <p class="muted">{{ localeStore.t('overview.watchers') }} {{ compactNumber(snapshot.volume) }}</p>
-              </RouterLink>
-            </div>
+            <RankedSymbolTable :items="movers" />
           </SectionPanel>
 
           <SectionPanel :title="localeStore.t('overview.sectorStrength')">
@@ -256,10 +236,6 @@ function addToWatch(symbol: string) {
   padding: 16px;
 }
 
-.compact-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .watch-top {
   display: flex;
   justify-content: space-between;
@@ -306,8 +282,7 @@ function addToWatch(symbol: string) {
   .top-grid,
   .content-grid,
   .bottom-grid,
-  .metrics-grid,
-  .compact-grid {
+  .metrics-grid {
     grid-template-columns: 1fr;
   }
 

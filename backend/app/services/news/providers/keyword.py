@@ -22,9 +22,12 @@ class KeywordNewsProvider:
 
         query = " OR ".join(f'"{term}"' for term in query_terms)
         url = f"https://news.google.com/rss/search?q={quote(query)}&hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url)
-            response.raise_for_status()
+        try:
+            async with httpx.AsyncClient(timeout=10.0, trust_env=False) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+        except httpx.HTTPError:
+            return []
 
         root = ElementTree.fromstring(response.text)
         items: list[NewsItem] = []
