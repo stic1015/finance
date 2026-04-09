@@ -44,6 +44,7 @@ describe('runtime helpers', () => {
       symbol: 'US.AAPL',
       provider: 'alpha_vantage',
       source_status: 'unavailable',
+      feed_type: 'stock',
       items: [],
       empty_reason: 'missing_api_key',
       message: 'Missing key.',
