@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import MarketOverviewView from '@/views/OpportunityDiscoveryCleanView.vue'
+import MarketOverviewView from '@/views/OpportunityDiscoveryTerminalView.vue'
 import StockResearchView from '@/views/StockResearchDeskCleanView.vue'
-import StrategyLabView from '@/views/StrategyLabWorkbenchCleanView.vue'
+import StrategyLabView from '@/views/StrategyLabWorkbenchTerminalView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),

@@ -94,16 +94,16 @@ const healthHeadline = computed(() =>
   display: grid;
   grid-template-columns: 0.9fr 1fr 0.8fr auto;
   align-items: center;
-  gap: 16px;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  gap: 12px;
+  padding-top: 12px;
+  padding-bottom: 12px;
   backdrop-filter: blur(14px);
 }
 
 .brand-lockup h1 {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   font-family: 'Chakra Petch', sans-serif;
-  font-size: clamp(1.4rem, 1.6vw, 2rem);
+  font-size: clamp(1.15rem, 1.3vw, 1.55rem);
 }
 
 nav {
@@ -113,7 +113,7 @@ nav {
 }
 
 nav a {
-  padding: 12px 16px;
+  padding: 9px 14px;
   border-radius: 999px;
   color: var(--text-secondary);
   border: 1px solid transparent;
@@ -128,13 +128,13 @@ nav a.router-link-active {
 
 .status-zone {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: end;
 }
 
 .status-stack {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   justify-items: end;
 }
 
@@ -147,10 +147,11 @@ nav a.router-link-active {
 
 .status-copy {
   display: grid;
-  gap: 4px;
-  max-width: 420px;
+  gap: 2px;
+  max-width: 360px;
   text-align: right;
   color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .status-headline {

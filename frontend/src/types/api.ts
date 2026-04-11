@@ -133,9 +133,25 @@ export interface MonthlyReturnPoint {
 
 export interface TradeLogEntry {
   timestamp: string
+  month: string
   action: 'buy' | 'sell' | 'rebalance'
   price: number
+  previous_exposure: number
   exposure: number
+  equity?: number | null
+  benchmark_equity?: number | null
+}
+
+export interface MonthlyTradeSummary {
+  month: string
+  return_rate: number
+  benchmark_return: number
+  start_equity: number
+  end_equity: number
+  trade_count: number
+  buy_count: number
+  sell_count: number
+  rebalance_count: number
 }
 
 export interface PositionSpan {
@@ -155,6 +171,7 @@ export interface BacktestResult {
   metrics?: BacktestMetrics | null
   equity_curve: EquityPoint[]
   monthly_returns: MonthlyReturnPoint[]
+  monthly_trade_summaries: MonthlyTradeSummary[]
   trade_log: TradeLogEntry[]
   position_spans: PositionSpan[]
   excess_return?: number | null

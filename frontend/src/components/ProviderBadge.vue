@@ -19,11 +19,12 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.03);
+  font-size: 0.85rem;
 }
 
 .dot {

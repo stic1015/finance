@@ -30,6 +30,7 @@
     "src/views/StrategyLabPage.vue",
     "src/components/StrategyForm.vue",
     "src/components/StrategyWorkbenchForm.vue",
+    "src/i18n/messages/en-US.ts",
     "src/utils/runtime.ts",
     "src/utils/display.ts"
   ]

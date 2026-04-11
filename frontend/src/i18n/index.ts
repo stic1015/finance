@@ -1,4 +1,4 @@
-import { enUS } from './messages/en-US'
+import { enUS } from './messages/en-US-fixed'
 import { zhCN } from './messages/zh-CN'
 
 export type Locale = 'zh-CN' | 'en-US'

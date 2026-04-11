@@ -12,6 +12,7 @@ from app.schemas.models import (
     BacktestResult,
     EquityPoint,
     MonthlyReturnPoint,
+    MonthlyTradeSummary,
     PositionSpan,
     TradeLogEntry,
 )
@@ -90,9 +91,36 @@ def run_backtest(request: BacktestRequest, candles: list[dict] | list) -> Backte
         trade_log.append(
             TradeLogEntry(
                 timestamp=row["timestamp"].to_pydatetime().replace(tzinfo=UTC),
+                month=row["timestamp"].strftime("%Y-%m"),
                 action=action,
                 price=float(row["close"]),
+                previous_exposure=float(row["prev_signal"]),
                 exposure=float(row["signal"]),
+                equity=float(frame.loc[frame["timestamp"] == row["timestamp"], "equity"].iloc[-1]),
+                benchmark_equity=float(
+                    frame.loc[frame["timestamp"] == row["timestamp"], "benchmark_equity"].iloc[-1]
+                ),
+            )
+        )
+
+    trade_rows["month"] = trade_rows["timestamp"].dt.strftime("%Y-%m")
+    monthly_trade_summaries: list[MonthlyTradeSummary] = []
+    for month, month_frame in frame.groupby(frame["timestamp"].dt.strftime("%Y-%m")):
+        month_trade_rows = trade_rows.loc[trade_rows["month"] == month]
+        buy_count = int((month_trade_rows["signal"] > month_trade_rows["prev_signal"]).sum())
+        sell_count = int((month_trade_rows["signal"] < month_trade_rows["prev_signal"]).sum())
+        rebalance_count = int(len(month_trade_rows) - buy_count - sell_count)
+        monthly_trade_summaries.append(
+            MonthlyTradeSummary(
+                month=str(month),
+                return_rate=float(month_frame["strategy_returns"].add(1).prod() - 1),
+                benchmark_return=float(month_frame["returns"].add(1).prod() - 1),
+                start_equity=float(month_frame["equity"].iloc[0]),
+                end_equity=float(month_frame["equity"].iloc[-1]),
+                trade_count=int(len(month_trade_rows)),
+                buy_count=buy_count,
+                sell_count=sell_count,
+                rebalance_count=rebalance_count,
             )
         )
 
@@ -148,6 +176,7 @@ def run_backtest(request: BacktestRequest, candles: list[dict] | list) -> Backte
         metrics=metrics,
         equity_curve=equity_curve,
         monthly_returns=monthly_returns,
+        monthly_trade_summaries=monthly_trade_summaries,
         trade_log=trade_log,
         position_spans=position_spans,
         excess_return=excess_return,

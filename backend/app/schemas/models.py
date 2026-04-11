@@ -156,9 +156,25 @@ class MonthlyReturnPoint(BaseModel):
 
 class TradeLogEntry(BaseModel):
     timestamp: datetime
+    month: str
     action: Literal["buy", "sell", "rebalance"]
     price: float
+    previous_exposure: float
     exposure: float
+    equity: float | None = None
+    benchmark_equity: float | None = None
+
+
+class MonthlyTradeSummary(BaseModel):
+    month: str
+    return_rate: float
+    benchmark_return: float
+    start_equity: float
+    end_equity: float
+    trade_count: int
+    buy_count: int
+    sell_count: int
+    rebalance_count: int
 
 
 class PositionSpan(BaseModel):
@@ -184,6 +200,7 @@ class BacktestResult(BaseModel):
     metrics: BacktestMetrics | None = None
     equity_curve: list[EquityPoint] = Field(default_factory=list)
     monthly_returns: list[MonthlyReturnPoint] = Field(default_factory=list)
+    monthly_trade_summaries: list[MonthlyTradeSummary] = Field(default_factory=list)
     trade_log: list[TradeLogEntry] = Field(default_factory=list)
     position_spans: list[PositionSpan] = Field(default_factory=list)
     excess_return: float | None = None

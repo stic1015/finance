@@ -37,6 +37,18 @@ const SENTIMENT_LABELS: Record<string, string> = {
   negative: '\u8d1f\u9762',
 }
 
+const TRADE_ACTION_LABELS: Record<string, string> = {
+  buy: '\u4e70\u5165',
+  sell: '\u5356\u51fa',
+  rebalance: '\u8c03\u4ed3',
+}
+
+const TRADE_ACTION_LABELS_EN: Record<string, string> = {
+  buy: 'Buy',
+  sell: 'Sell',
+  rebalance: 'Rebalance',
+}
+
 export function translateStatus(status: SourceStatus) {
   return STATUS_LABELS[status]
 }
@@ -51,6 +63,11 @@ export function translateScenario(label: string) {
 
 export function translateSentiment(label: string) {
   return SENTIMENT_LABELS[label] ?? label
+}
+
+export function translateTradeAction(label: string, locale: 'zh-CN' | 'en-US' = 'zh-CN') {
+  if (locale === 'en-US') return TRADE_ACTION_LABELS_EN[label] ?? label
+  return TRADE_ACTION_LABELS[label] ?? label
 }
 
 export function buildProviderBadgeLabel(provider: string, status: SourceStatus) {

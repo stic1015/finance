@@ -24,8 +24,8 @@ function handleChange(event: Event) {
 .locale-switcher {
   display: grid;
   gap: 8px;
-  padding: 12px 14px;
-  min-width: 150px;
+  padding: 10px 12px;
+  min-width: 136px;
 }
 
 select {
@@ -33,6 +33,6 @@ select {
   border-radius: 12px;
   background: rgba(4, 10, 16, 0.62);
   color: var(--text);
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 </style>

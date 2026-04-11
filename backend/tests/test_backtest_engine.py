@@ -44,6 +44,10 @@ def test_backtest_runs_without_lookahead_crash():
     assert result.metrics is not None
     assert result.metrics.trade_count >= 0
     assert result.monthly_returns
+    assert result.monthly_trade_summaries
     assert result.trade_log is not None
     assert result.position_spans is not None
     assert result.strategy_summary
+    if result.trade_log:
+        assert result.trade_log[0].month
+        assert result.trade_log[0].previous_exposure >= 0

@@ -38,7 +38,7 @@ function goToSymbol() {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
-  padding: 12px;
+  padding: 10px;
 }
 
 input {
@@ -46,7 +46,7 @@ input {
   border-radius: 12px;
   background: rgba(4, 10, 16, 0.62);
   color: var(--text);
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 button {
@@ -55,7 +55,7 @@ button {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: #041019;
   font-weight: 700;
-  padding: 12px 16px;
+  padding: 10px 14px;
   cursor: pointer;
 }
 </style>

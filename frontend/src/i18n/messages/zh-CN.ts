@@ -18,6 +18,14 @@ export const zhCN = {
     search: '\u641c\u7d22',
     searchPlaceholder: '\u8f93\u5165\u6e2f\u80a1/A\u80a1\u4ee3\u7801\uff0c\u4f8b\u5982 HK.00700 / 600519',
     language: '\u8bed\u8a00',
+    code: '\u4ee3\u7801',
+    name: '\u540d\u79f0',
+    price: '\u4ef7\u683c',
+    volume: '\u6210\u4ea4\u91cf',
+    status: '\u72b6\u6001',
+    time: '\u65f6\u95f4',
+    action: '\u52a8\u4f5c',
+    exposure: '\u4ed3\u4f4d',
     zhCN: '\u7b80\u4f53\u4e2d\u6587',
     enUS: 'English'
   },
@@ -50,7 +58,14 @@ export const zhCN = {
     turnover: '\u6210\u4ea4\u989d',
     onlyRealtime: '\u4ec5\u770b\u5b9e\u65f6',
     onlyWithNews: '\u4ec5\u6709\u65b0\u95fb',
-    onlyBacktestReady: '\u4ec5\u53ef\u56de\u6d4b'
+    onlyBacktestReady: '\u4ec5\u53ef\u56de\u6d4b',
+    marketBriefs: '\u5e02\u573a\u5feb\u8baf',
+    marketPulse: '\u72ec\u7acb\u65b0\u95fb\u4e0e\u884c\u4e1a\u7ebf\u7d22',
+    liveCoverage: '\u5b9e\u65f6\u8986\u76d6',
+    briefsAsync: '\u65b0\u95fb\u5f02\u6b65\u8865\u8f7d',
+    briefsLoading: '\u6b63\u5728\u8865\u8f7d\u5e02\u573a\u5feb\u8baf...',
+    briefsError: '\u5e02\u573a\u5feb\u8baf\u6682\u65f6\u4e0d\u53ef\u7528',
+    briefsEmpty: '\u5f53\u524d\u6682\u65e0\u53ef\u7528\u7684\u5e02\u573a\u5feb\u8baf\u3002'
   },
   research: {
     priceStructure: '\u4ef7\u683c\u7ed3\u6784',
@@ -118,7 +133,17 @@ export const zhCN = {
     logicSummary: '\u903b\u8f91\u6458\u8981',
     styleTags: '\u98ce\u683c\u6807\u7b7e',
     marketScope: '\u9002\u7528\u5e02\u573a',
-    chooseToRun: '\u9009\u62e9\u4e00\u4e2a\u7b56\u7565\u6a21\u677f\u5e76\u53d1\u8d77\u56de\u6d4b\uff0c\u8fd9\u91cc\u4f1a\u663e\u793a\u98ce\u9669\u4e0e\u6536\u76ca\u7ed3\u679c\u3002'
+    chooseToRun: '\u9009\u62e9\u4e00\u4e2a\u7b56\u7565\u6a21\u677f\u5e76\u53d1\u8d77\u56de\u6d4b\uff0c\u8fd9\u91cc\u4f1a\u663e\u793a\u98ce\u9669\u4e0e\u6536\u76ca\u7ed3\u679c\u3002',
+    monthlyExplainer: '\u6708\u5ea6\u6536\u76ca\u89e3\u91ca',
+    tradeMarkers: '\u4e70\u5356\u70b9\u8bf4\u660e',
+    benchmarkReturn: '\u57fa\u51c6\u6536\u76ca',
+    startEquity: '\u6708\u521d\u6743\u76ca',
+    endEquity: '\u6708\u672b\u6743\u76ca',
+    previousExposure: '\u4e0a\u4e00\u6863\u4ed3\u4f4d',
+    filteredTrades: '\u5f53\u524d\u7b5b\u9009',
+    allTrades: '\u5168\u90e8\u4ea4\u6613',
+    tradeFocusHint: '\u70b9\u51fb\u6708\u5ea6\u5361\u7247\u540e\uff0c\u4e0b\u65b9\u56fe\u8868\u4e0e\u4ea4\u6613\u8868\u4f1a\u6309\u6708\u4efd\u5bf9\u7167\u3002',
+    noTradesForMonth: '\u8be5\u6708\u6ca1\u6709\u4ea4\u6613\u52a8\u4f5c\u3002'
   },
   alerts: {
     center: '\u63d0\u9192\u4e2d\u5fc3',
