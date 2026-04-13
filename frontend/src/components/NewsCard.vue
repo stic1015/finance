@@ -33,6 +33,7 @@ defineProps<{
 .news-card:hover {
   transform: translateY(-2px);
   border-color: var(--border-strong);
+  box-shadow: var(--shadow);
 }
 
 .top-row,
@@ -49,7 +50,8 @@ p {
 }
 
 h3 {
-  font-size: 1rem;
+  font-size: 1.02rem;
+  line-height: 1.4;
 }
 
 p {
@@ -60,23 +62,28 @@ p {
 .sentiment {
   padding: 6px 10px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  text-transform: capitalize;
+  border: 1px solid transparent;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 [data-tone='positive'] {
   color: var(--positive);
-  background: rgba(47, 224, 139, 0.1);
+  background: var(--positive-soft);
+  border-color: rgba(57, 230, 146, 0.16);
 }
 
 [data-tone='negative'] {
   color: var(--negative);
-  background: rgba(255, 107, 122, 0.1);
+  background: var(--negative-soft);
+  border-color: rgba(255, 117, 134, 0.16);
 }
 
 [data-tone='neutral'] {
   color: var(--accent);
-  background: rgba(55, 214, 255, 0.1);
+  background: var(--accent-soft);
+  border-color: rgba(70, 212, 255, 0.16);
 }
 
 .foot-row {

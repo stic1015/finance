@@ -91,6 +91,37 @@ const relativeStrength = computed(() => {
   const average = section.metrics.reduce((sum, metric) => sum + metric.change_percent, 0) / section.metrics.length
   return snapshot.value.change_percent - average
 })
+const leadScenario = computed(() =>
+  forecast.value?.scenarios.length
+    ? [...forecast.value.scenarios].sort((a, b) => b.probability - a.probability)[0]
+    : null,
+)
+const thesisHeadline = computed(() => {
+  if (!snapshot.value || !leadScenario.value) return ''
+  if (snapshot.value.change_percent >= 2 && leadScenario.value.label === 'bullish') {
+    return localeStore.locale === 'zh-CN' ? '强势延续，适合继续跟踪确认' : 'Momentum still has support'
+  }
+  if (snapshot.value.change_percent <= -2 || leadScenario.value.label === 'bearish') {
+    return localeStore.locale === 'zh-CN' ? '风险抬升，先看保护位再决定' : 'Risk is rising before conviction'
+  }
+  return localeStore.locale === 'zh-CN' ? '结论未定，等待更多证据闭环' : 'Neutral setup, waiting for confirmation'
+})
+const thesisSummary = computed(() => {
+  if (!snapshot.value) return ''
+  if (snapshot.value.source_status !== 'live') {
+    return localeStore.locale === 'zh-CN'
+      ? '当前不是实时行情，先把它当成研究输入而不是交易指令。'
+      : 'Feed is not fully live, so treat this as research input rather than execution guidance.'
+  }
+  return localeStore.locale === 'zh-CN'
+    ? '先用价格结构和主导情景形成判断，再决定是否加入观察、设置预警或进入策略验证。'
+    : 'Build conviction from price structure and scenario leadership before watching, alerting, or validating.'
+})
+const evidenceChain = computed(() => [
+  ...summaryBullets.value,
+  ...(forecast.value?.rationale ?? []),
+].slice(0, 5))
+const evidenceFeed = computed(() => (newsItems.value.length ? newsItems.value : marketBriefs.value?.items ?? []))
 
 async function waitForBacktest(jobId: string) {
   let result = await apiGet<BacktestResult>(`/api/backtests/${jobId}`)
@@ -197,110 +228,142 @@ onMounted(() => {
 
     <template v-else>
       <section class="hero panel" v-if="snapshot">
-        <div>
+        <div class="hero-copy">
           <div class="eyebrow">{{ snapshot.symbol }}</div>
           <h2>{{ snapshot.display_name }}</h2>
+          <p class="hero-thesis">{{ thesisHeadline }}</p>
+          <p class="hero-summary">{{ thesisSummary }}</p>
           <div class="hero-price-row">
             <strong>{{ formatCurrency(snapshot.price) }}</strong>
             <span :class="snapshot.change_percent >= 0 ? 'status-positive' : 'status-negative'">
               {{ formatMarketPercent(snapshot.change_percent) }}
             </span>
           </div>
+          <div class="hero-badges">
+            <ProviderBadge :label="buildLocalizedProviderBadgeLabel('snapshot', snapshot.source_status)" :status="snapshot.source_status" />
+            <ProviderBadge
+              v-if="forecast"
+              :label="buildLocalizedProviderBadgeLabel(`forecast ${forecast.model_family}`, forecast.source_status)"
+              :status="forecast.source_status"
+            />
+          </div>
           <div class="hero-actions">
             <button type="button" @click="addToWatch">{{ localeStore.t('research.watchlistAction') }}</button>
             <button type="button" class="secondary" @click="addForecastAlert">{{ localeStore.t('research.alertAction') }}</button>
+            <RouterLink class="hero-link" to="/strategy-lab">
+              {{ localeStore.locale === 'zh-CN' ? '进入策略实验室' : 'Open Strategy Lab' }}
+            </RouterLink>
           </div>
         </div>
-        <div class="hero-stats">
-          <MetricTile :label="localeStore.t('research.volume')" :value="compactNumber(snapshot.volume)" />
-          <MetricTile :label="localeStore.t('research.turnover')" :value="compactNumber(snapshot.turnover)" />
-          <MetricTile :label="localeStore.t('research.marketState')" :value="snapshot.market_state" />
-        </div>
-      </section>
-
-      <div v-if="loading" class="panel loading-block">{{ localeStore.t('common.loading') }}</div>
-      <div v-else-if="error" class="panel loading-block error">{{ error }}</div>
-
-      <template v-else>
-        <SectionPanel :title="localeStore.t('research.summary')" :subtitle="localeStore.t('common.whyWatch')">
-          <div class="insight-grid">
-            <MetricTile v-for="(item, index) in summaryBullets" :key="`summary-${index}`" :label="localeStore.t('research.scoreReasons')" :value="item" />
-          </div>
-        </SectionPanel>
-
-        <div class="split-layout">
-          <SectionPanel :title="localeStore.t('research.drivers')" subtitle="Drivers">
-            <div class="pill-grid">
-              <InsightPill v-for="tag in driverTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
-            </div>
-          </SectionPanel>
-          <SectionPanel :title="localeStore.t('research.technicalTags')" subtitle="Structure">
-            <div class="pill-grid">
-              <InsightPill v-for="tag in technicalTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
-            </div>
-          </SectionPanel>
-        </div>
-
-        <div class="split-layout">
-          <SectionPanel :title="localeStore.t('research.riskTags')" subtitle="Risk">
-            <div class="pill-grid">
-              <InsightPill v-for="tag in riskTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
-            </div>
-          </SectionPanel>
-          <SectionPanel :title="localeStore.t('research.relativeStrength')" subtitle="Benchmark">
+        <div class="hero-sidebar">
+          <div class="hero-stats">
+            <MetricTile :label="localeStore.t('research.volume')" :value="compactNumber(snapshot.volume)" />
+            <MetricTile :label="localeStore.t('research.turnover')" :value="compactNumber(snapshot.turnover)" />
+            <MetricTile :label="localeStore.t('research.marketState')" :value="snapshot.market_state" />
             <MetricTile
               :label="localeStore.t('research.relativeStrength')"
               :value="relativeStrength != null ? formatMarketPercent(relativeStrength) : '-'"
               :positive="relativeStrength != null ? relativeStrength >= 0 : null"
             />
-          </SectionPanel>
-        </div>
-
-        <SectionPanel :title="localeStore.t('research.priceStructure')" :subtitle="localeStore.t('research.candlesVolume')">
-          <div v-if="snapshot || candles" class="section-meta">
-            <ProviderBadge v-if="snapshot" :label="buildLocalizedProviderBadgeLabel('snapshot', snapshot.source_status)" :status="snapshot.source_status" />
-            <ProviderBadge v-if="candles" :label="buildLocalizedProviderBadgeLabel(`candles ${candles.interval}`, candles.source_status)" :status="candles.source_status" />
           </div>
-          <CandleChart :series="candles" />
-        </SectionPanel>
+          <div class="hero-evidence glass-line">
+            <div class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '主证据链' : 'Evidence Chain' }}</div>
+            <ul>
+              <li v-for="(item, index) in evidenceChain" :key="`evidence-${index}`">{{ item }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-        <div class="split-layout">
-          <SectionPanel :title="localeStore.t('research.relatedNews')" :subtitle="localeStore.t('research.attributedFeed')">
-            <div v-if="newsFeed" class="section-meta">
-              <ProviderBadge :label="buildLocalizedProviderBadgeLabel(newsFeed.provider, newsFeed.source_status)" :status="newsFeed.source_status" />
-            </div>
-            <div v-if="newsItems.length" class="news-grid">
-              <NewsCard v-for="item in newsItems" :key="item.id" :item="item" />
-            </div>
-            <div v-else-if="marketBriefs?.items.length" class="news-grid">
-              <NewsCard v-for="item in marketBriefs.items" :key="item.id" :item="item" />
-            </div>
-            <div v-else class="empty-state panel">{{ newsEmptyMessage }}</div>
-          </SectionPanel>
+      <div v-if="loading" class="panel empty-shell">{{ localeStore.t('common.loading') }}</div>
+      <div v-else-if="error" class="panel empty-shell error">{{ error }}</div>
 
-          <SectionPanel :title="localeStore.t('research.forecast')" :subtitle="localeStore.t('research.forecastScenarios')">
-            <div v-if="forecast" class="section-meta">
-              <ProviderBadge :label="buildLocalizedProviderBadgeLabel(`forecast ${forecast.model_family}`, forecast.source_status)" :status="forecast.source_status" />
-            </div>
-            <div v-if="forecast" class="scenario-grid">
-              <ScenarioCard v-for="scenario in forecast.scenarios" :key="scenario.label" :scenario="scenario" />
-              <div class="forecast-summary panel">
-                <div class="eyebrow">{{ localeStore.t('research.expectedBand') }}</div>
-                <strong>{{ formatCurrency(forecast.expected_price_range[0]) }} - {{ formatCurrency(forecast.expected_price_range[1]) }}</strong>
-                <p>{{ forecast.caveat }}</p>
+      <template v-else>
+        <div class="research-canvas">
+          <div class="main-column">
+            <SectionPanel :title="localeStore.t('research.priceStructure')" :subtitle="localeStore.t('research.candlesVolume')">
+              <div v-if="snapshot || candles" class="section-meta">
+                <ProviderBadge v-if="snapshot" :label="buildLocalizedProviderBadgeLabel('snapshot', snapshot.source_status)" :status="snapshot.source_status" />
+                <ProviderBadge v-if="candles" :label="buildLocalizedProviderBadgeLabel(`candles ${candles.interval}`, candles.source_status)" :status="candles.source_status" />
               </div>
-            </div>
-          </SectionPanel>
-        </div>
+              <CandleChart :series="candles" />
+            </SectionPanel>
 
-        <SectionPanel :title="localeStore.t('research.backtestSnapshot')" :subtitle="localeStore.t('research.institutionalDefault')">
-          <div v-if="backtest?.metrics" class="backtest-grid">
-            <MetricTile :label="localeStore.t('strategy.cumulative')" :value="formatPercent(backtest.metrics.cumulative_return)" />
-            <MetricTile :label="localeStore.t('strategy.annualized')" :value="formatPercent(backtest.metrics.annualized_return)" />
-            <MetricTile :label="localeStore.t('strategy.sharpe')" :value="backtest.metrics.sharpe_ratio.toFixed(2)" />
-            <MetricTile :label="localeStore.t('strategy.maxDrawdown')" :value="formatPercent(backtest.metrics.max_drawdown)" />
+            <div class="matrix-grid">
+              <SectionPanel :title="localeStore.t('research.drivers')" subtitle="Drivers">
+                <div class="pill-grid">
+                  <InsightPill v-for="tag in driverTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
+                </div>
+              </SectionPanel>
+              <SectionPanel :title="localeStore.t('research.technicalTags')" subtitle="Structure">
+                <div class="pill-grid">
+                  <InsightPill v-for="tag in technicalTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
+                </div>
+              </SectionPanel>
+              <SectionPanel :title="localeStore.t('research.riskTags')" subtitle="Risk">
+                <div class="pill-grid">
+                  <InsightPill v-for="tag in riskTags" :key="tag.label" :label="tag.label" :tone="tag.tone" />
+                </div>
+              </SectionPanel>
+            </div>
+
+            <SectionPanel :title="localeStore.t('research.relatedNews')" :subtitle="localeStore.t('research.attributedFeed')">
+              <div v-if="newsFeed" class="section-meta">
+                <ProviderBadge :label="buildLocalizedProviderBadgeLabel(newsFeed.provider, newsFeed.source_status)" :status="newsFeed.source_status" />
+              </div>
+              <div v-if="evidenceFeed.length" class="news-grid">
+                <NewsCard v-for="item in evidenceFeed.slice(0, 4)" :key="item.id" :item="item" />
+              </div>
+              <div v-else class="evidence-empty">{{ newsEmptyMessage }}</div>
+            </SectionPanel>
           </div>
-        </SectionPanel>
+
+          <aside class="side-column">
+            <SectionPanel :title="localeStore.t('research.forecast')" :subtitle="localeStore.t('research.forecastScenarios')">
+              <div v-if="forecast" class="scenario-grid">
+                <ScenarioCard v-for="scenario in forecast.scenarios" :key="scenario.label" :scenario="scenario" />
+                <div class="forecast-summary glass-line">
+                  <div class="eyebrow">{{ localeStore.t('research.expectedBand') }}</div>
+                  <strong>{{ formatCurrency(forecast.expected_price_range[0]) }} - {{ formatCurrency(forecast.expected_price_range[1]) }}</strong>
+                  <p>{{ forecast.caveat }}</p>
+                </div>
+              </div>
+            </SectionPanel>
+
+            <SectionPanel :title="localeStore.t('research.backtestSnapshot')" :subtitle="localeStore.t('research.institutionalDefault')">
+              <div v-if="backtest?.metrics" class="backtest-grid">
+                <MetricTile :label="localeStore.t('strategy.cumulative')" :value="formatPercent(backtest.metrics.cumulative_return)" />
+                <MetricTile :label="localeStore.t('strategy.annualized')" :value="formatPercent(backtest.metrics.annualized_return)" />
+                <MetricTile :label="localeStore.t('strategy.sharpe')" :value="backtest.metrics.sharpe_ratio.toFixed(2)" />
+                <MetricTile :label="localeStore.t('strategy.maxDrawdown')" :value="formatPercent(backtest.metrics.max_drawdown)" />
+              </div>
+              <div v-else class="evidence-empty">
+                {{ localeStore.locale === 'zh-CN' ? '回测快照尚未准备好。' : 'Backtest snapshot is not ready yet.' }}
+              </div>
+            </SectionPanel>
+
+            <SectionPanel :title="localeStore.locale === 'zh-CN' ? '市场上下文' : 'Market Context'" :subtitle="localeStore.locale === 'zh-CN' ? '相对市场再看一次' : 'Re-check relative positioning'">
+              <div class="context-stack">
+                <MetricTile
+                  :label="localeStore.t('research.relativeStrength')"
+                  :value="relativeStrength != null ? formatMarketPercent(relativeStrength) : '-'"
+                  :positive="relativeStrength != null ? relativeStrength >= 0 : null"
+                />
+                <div class="context-note glass-line">
+                  <div class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '主导情景' : 'Lead Scenario' }}</div>
+                  <strong>{{ leadScenario ? leadScenario.label : '-' }}</strong>
+                  <p>
+                    {{
+                      localeStore.locale === 'zh-CN'
+                        ? '如果这里和价格结构方向不一致，优先相信结构，再等待情景修正。'
+                        : 'If this disagrees with the chart structure, trust the structure first and wait for scenario alignment.'
+                    }}
+                  </p>
+                </div>
+              </div>
+            </SectionPanel>
+          </aside>
+        </div>
       </template>
     </template>
   </div>
@@ -308,27 +371,29 @@ onMounted(() => {
 
 <style scoped>
 .research-layout,
-.split-layout,
 .news-grid,
 .scenario-grid,
 .backtest-grid,
-.insight-grid,
-.pill-grid {
+.pill-grid,
+.matrix-grid,
+.research-canvas,
+.context-stack {
   display: grid;
   gap: 20px;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 20px;
-  padding: 28px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.95fr);
+  gap: 24px;
+  padding: 28px 28px 26px;
 }
 
 .hero h2 {
-  margin: 8px 0;
-  font-size: 2.6rem;
+  margin: 8px 0 0;
+  font-size: clamp(2.2rem, 3vw, 3.6rem);
   font-family: 'Chakra Petch', sans-serif;
+  line-height: 0.94;
 }
 
 .hero-price-row {
@@ -342,14 +407,41 @@ onMounted(() => {
   font-family: 'Chakra Petch', sans-serif;
 }
 
-.hero-stats,
-.backtest-grid,
-.insight-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.hero-copy {
+  display: grid;
+  gap: 14px;
 }
 
-.split-layout {
-  grid-template-columns: 1fr 1fr;
+.hero-thesis {
+  margin: 0;
+  font-size: 1.12rem;
+  color: var(--text);
+}
+
+.hero-summary,
+.forecast-summary p,
+.context-note p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-sidebar,
+.hero-evidence {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-stats,
+.backtest-grid,
+.matrix-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .pill-grid {
@@ -358,16 +450,20 @@ onMounted(() => {
 
 .hero-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-top: 18px;
 }
 
-.hero-actions button {
+.hero-actions button,
+.hero-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 14px;
   padding: 12px 16px;
   cursor: pointer;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #041019;
   font-weight: 700;
 }
@@ -375,7 +471,13 @@ onMounted(() => {
 .hero-actions .secondary {
   background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
+}
+
+.hero-link {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text);
 }
 
 .forecast-summary {
@@ -389,27 +491,44 @@ onMounted(() => {
   font-family: 'Chakra Petch', sans-serif;
 }
 
-.forecast-summary p,
-.section-note {
-  margin: 0;
+.research-canvas {
+  grid-template-columns: minmax(0, 1.45fr) 360px;
+  align-items: start;
+}
+
+.section-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.evidence-empty {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed var(--border-subtle);
   color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.empty-state,
-.loading-block {
-  padding: 20px;
+.context-note,
+.hero-evidence {
+  padding: 16px;
 }
 
-.error {
-  color: var(--negative);
+.hero-evidence ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  display: grid;
+  gap: 10px;
 }
 
 @media (max-width: 1200px) {
   .hero,
-  .split-layout,
+  .research-canvas,
   .hero-stats,
   .backtest-grid,
-  .insight-grid {
+  .matrix-grid {
     grid-template-columns: 1fr;
   }
 }

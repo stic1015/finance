@@ -12,11 +12,12 @@ const unreadEvents = computed(() => watchStore.events.filter((event) => !event.r
 
 <template>
   <section class="alert-center panel">
-    <header>
-      <div>
+    <header class="alert-head">
+      <div class="alert-copy">
         <div class="eyebrow">{{ localeStore.t('alerts.center') }}</div>
         <h3>{{ unreadEvents.length }} {{ localeStore.t('alerts.unread') }}</h3>
       </div>
+      <span class="alert-pill">{{ watchStore.events.length }}</span>
     </header>
     <div class="content">
       <article v-for="event in watchStore.events.slice(0, 6)" :key="event.id" class="event-row">
@@ -40,14 +41,37 @@ const unreadEvents = computed(() => watchStore.events.filter((event) => !event.r
   padding: 18px;
 }
 
-header {
-  margin-bottom: 14px;
+.alert-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.alert-copy {
+  display: grid;
+  gap: 8px;
 }
 
 h3,
 p,
 strong {
   margin: 0;
+}
+
+.alert-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-family: 'Chakra Petch', sans-serif;
 }
 
 .content {
@@ -60,9 +84,10 @@ strong {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 14px 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .event-row p,
@@ -70,10 +95,16 @@ strong {
   color: var(--text-secondary);
 }
 
+.event-row strong {
+  display: block;
+  margin-bottom: 6px;
+  font-family: 'Chakra Petch', sans-serif;
+}
+
 button {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text);
   padding: 10px 12px;
   cursor: pointer;

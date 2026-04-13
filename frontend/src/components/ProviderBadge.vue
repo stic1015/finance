@@ -19,12 +19,14 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  min-height: 34px;
+  padding: 7px 12px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
 }
 
 .dot {
@@ -37,17 +39,28 @@ defineProps<{
 
 [data-status='live'] .dot {
   background: var(--positive);
+  box-shadow: 0 0 16px rgba(57, 230, 146, 0.24);
 }
 
 [data-status='unavailable'] .dot {
   background: var(--negative);
+  box-shadow: 0 0 16px rgba(255, 117, 134, 0.24);
 }
 
 [data-status='fixture'] .dot {
   background: var(--warning);
+  box-shadow: 0 0 16px rgba(255, 200, 106, 0.24);
 }
 
 [data-status='delayed'] .dot {
   background: #6bd0ff;
+}
+
+[data-status='live'] {
+  border-color: rgba(57, 230, 146, 0.22);
+}
+
+[data-status='unavailable'] {
+  border-color: rgba(255, 117, 134, 0.22);
 }
 </style>

@@ -59,8 +59,8 @@ table {
 
 th,
 td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: left;
   white-space: nowrap;
 }

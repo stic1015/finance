@@ -7,12 +7,14 @@ defineProps<{
 
 <template>
   <section class="section-panel panel">
-    <header>
-      <div>
+    <header class="section-head">
+      <div class="section-copy">
         <div class="eyebrow">{{ subtitle ?? '研究模块' }}</div>
         <h2>{{ title }}</h2>
       </div>
-      <slot name="actions" />
+      <div v-if="$slots.actions" class="section-actions">
+        <slot name="actions" />
+      </div>
     </header>
     <div class="content">
       <slot />
@@ -22,24 +24,50 @@ defineProps<{
 
 <style scoped>
 .section-panel {
-  padding: 22px;
+  padding: 22px 22px 20px;
 }
 
-header {
+.section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 h2 {
-  margin: 8px 0 0;
-  font-size: 1.25rem;
+  margin: 0;
+  font-size: clamp(1.08rem, 1.25vw, 1.34rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .content {
   display: grid;
   gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .section-head {
+    flex-direction: column;
+  }
+
+  .section-actions {
+    justify-content: flex-start;
+  }
 }
 </style>

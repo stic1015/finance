@@ -34,8 +34,12 @@ function statusLabel(status: MarketSnapshot['source_status']) {
       <tbody>
         <tr v-for="(item, index) in items" :key="item.symbol">
           <td>{{ index + 1 }}</td>
-          <td class="mono">{{ item.symbol }}</td>
-          <td>{{ item.display_name }}</td>
+          <td class="mono">
+            <RouterLink class="symbol-link" :to="`/stocks/${item.symbol}`">{{ item.symbol }}</RouterLink>
+          </td>
+          <td>
+            <RouterLink class="name-link" :to="`/stocks/${item.symbol}`">{{ item.display_name }}</RouterLink>
+          </td>
           <td>{{ formatCurrency(item.price) }}</td>
           <td :class="item.change_percent >= 0 ? 'status-positive' : 'status-negative'">
             {{ formatMarketPercent(item.change_percent) }}
@@ -62,8 +66,8 @@ table {
 
 th,
 td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: left;
   white-space: nowrap;
 }
@@ -72,5 +76,28 @@ th {
   font-size: 0.8rem;
   color: var(--text-muted);
   font-weight: 600;
+}
+
+tbody tr {
+  transition: background 160ms ease;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.symbol-link,
+.name-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.symbol-link {
+  color: var(--accent);
+}
+
+.name-link {
+  font-weight: 500;
 }
 </style>

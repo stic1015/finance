@@ -11,7 +11,7 @@ function handleChange(event: Event) {
 </script>
 
 <template>
-  <label class="locale-switcher panel">
+  <label class="locale-switcher glass-line">
     <span class="eyebrow">{{ localeStore.t('common.language') }}</span>
     <select :value="localeStore.locale" @change="handleChange">
       <option value="zh-CN">{{ localeStore.t('common.zhCN') }}</option>
@@ -23,16 +23,21 @@ function handleChange(event: Event) {
 <style scoped>
 .locale-switcher {
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
-  min-width: 136px;
+  gap: 10px;
+  padding: 12px 14px;
+  min-width: 152px;
 }
 
 select {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: rgba(4, 10, 16, 0.62);
+  min-height: 42px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: rgba(4, 10, 16, 0.72);
   color: var(--text);
-  padding: 8px 10px;
+  padding: 8px 12px;
+}
+
+select:focus {
+  border-color: var(--border-strong);
 }
 </style>

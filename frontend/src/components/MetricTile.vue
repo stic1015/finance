@@ -17,28 +17,48 @@ const deltaClass = computed(() => {
 
 <template>
   <article class="metric-tile panel">
-    <div class="eyebrow">{{ label }}</div>
-    <strong>{{ value }}</strong>
+    <div class="metric-copy">
+      <div class="eyebrow">{{ label }}</div>
+      <strong>{{ value }}</strong>
+    </div>
     <span v-if="delta" :class="deltaClass">{{ delta }}</span>
   </article>
 </template>
 
 <style scoped>
 .metric-tile {
-  padding: 18px;
-  min-height: 122px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  padding: 18px 18px 16px;
+  min-height: 126px;
+  display: grid;
+  gap: 14px;
+  align-content: space-between;
+}
+
+.metric-copy {
+  display: grid;
+  gap: 14px;
 }
 
 strong {
-  font-size: 1.9rem;
-  line-height: 1;
+  font-size: clamp(1.7rem, 2vw, 2.3rem);
+  line-height: 0.95;
   font-family: 'Chakra Petch', sans-serif;
+  letter-spacing: -0.03em;
 }
 
 span {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.metric-tile::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(70, 212, 255, 0.36), transparent);
+  pointer-events: none;
 }
 </style>

@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useLocaleStore } from '@/stores/locale'
 import type { BacktestResult } from '@/types'
 import { formatPercent } from '@/utils/format'
 
 defineProps<{
   runs: BacktestResult[]
 }>()
+
+const localeStore = useLocaleStore()
 </script>
 
 <template>
@@ -16,6 +19,13 @@ defineProps<{
           <th>累计收益</th>
           <th>超额收益</th>
           <th>最大回撤</th>
+          <th>Sharpe</th>
+        </tr>
+        <tr class="clean-head">
+          <th>{{ localeStore.locale === 'zh-CN' ? '策略' : 'Strategy' }}</th>
+          <th>{{ localeStore.t('strategy.cumulative') }}</th>
+          <th>{{ localeStore.t('strategy.excessReturn') }}</th>
+          <th>{{ localeStore.t('strategy.maxDrawdown') }}</th>
           <th>Sharpe</th>
         </tr>
       </thead>
@@ -45,8 +55,8 @@ table {
 
 th,
 td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: left;
 }
 
@@ -54,5 +64,9 @@ th {
   color: var(--text-muted);
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+thead tr:first-child {
+  display: none;
 }
 </style>

@@ -58,7 +58,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <form class="strategy-form panel" @submit.prevent="handleSubmit">
+  <form class="strategy-form" @submit.prevent="handleSubmit">
     <label>
       <span class="eyebrow">{{ localeStore.t('strategy.symbol') }}</span>
       <input v-model="form.symbol" />
@@ -71,7 +71,7 @@ function handleSubmit() {
         </option>
       </select>
     </label>
-    <div v-if="activeStrategy" class="strategy-hint panel">
+    <div v-if="activeStrategy" class="strategy-hint glass-line">
       <div class="eyebrow">{{ activeStrategy.category }}</div>
       <strong>{{ activeStrategy.label }}</strong>
       <p>{{ activeStrategy.description }}</p>
@@ -100,7 +100,6 @@ function handleSubmit() {
 .strategy-form {
   display: grid;
   gap: 16px;
-  padding: 20px;
 }
 
 label {
@@ -111,18 +110,25 @@ label {
 input,
 select {
   width: 100%;
+  min-height: 48px;
   padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
   color: var(--text);
-  background: rgba(4, 10, 16, 0.62);
+  background: rgba(4, 10, 16, 0.72);
+}
+
+input:focus,
+select:focus {
+  border-color: var(--border-strong);
 }
 
 button {
+  min-height: 50px;
   padding: 15px 18px;
   border: none;
-  border-radius: 14px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #021018;
   font-weight: 700;
   cursor: pointer;

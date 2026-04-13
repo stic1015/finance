@@ -12,20 +12,25 @@ defineProps<{
 <style scoped>
 .insight-pill {
   display: inline-flex;
-  padding: 8px 12px;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 13px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 [data-tone='positive'] {
-  background: rgba(47, 224, 139, 0.12);
+  background: var(--positive-soft);
+  border-color: rgba(57, 230, 146, 0.2);
   color: var(--positive);
 }
 
 [data-tone='negative'] {
-  background: rgba(255, 107, 122, 0.12);
+  background: var(--negative-soft);
+  border-color: rgba(255, 117, 134, 0.2);
   color: var(--negative);
 }
 </style>
