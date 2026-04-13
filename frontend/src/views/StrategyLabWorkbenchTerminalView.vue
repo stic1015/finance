@@ -32,9 +32,10 @@ const selectedStrategy = computed(() => {
 })
 
 const monthlyTradeSummaries = computed(() => latestRun.value?.monthly_trade_summaries ?? [])
-const activeMonth = computed(
-  () => monthlyTradeSummaries.value.find((item) => item.month === selectedMonth.value) ?? monthlyTradeSummaries.value[0] ?? null,
-)
+const activeMonth = computed(() => {
+  if (!selectedMonth.value) return null
+  return monthlyTradeSummaries.value.find((item) => item.month === selectedMonth.value) ?? null
+})
 const visibleTradeRows = computed(() => {
   if (!latestRun.value) return []
   if (!selectedMonth.value) return latestRun.value.trade_log
@@ -61,6 +62,33 @@ const activeMonthNote = computed(() => {
     return localeStore.locale === 'zh-CN'
       ? '先看总曲线，再按月份切入解释。'
       : 'Start from the full equity curve, then drill down by month.'
+  }
+  return localeStore.locale === 'zh-CN'
+    ? `${activeMonth.value.month} 以 ${dominantAction(activeMonth.value)} 为主，交易 ${activeMonth.value.trade_count} 次。`
+    : `${activeMonth.value.month} was led by ${dominantAction(activeMonth.value)} with ${activeMonth.value.trade_count} trades.`
+})
+
+const uiRunHeadline = computed(() => {
+  if (!latestMetrics.value || !latestRun.value) {
+    return localeStore.locale === 'zh-CN'
+      ? '先配置模板并运行一轮回测，再进入解释和比较。'
+      : 'Configure a template and run a backtest before moving into explanation and comparison.'
+  }
+  if ((latestRun.value.excess_return ?? 0) > 0) {
+    return localeStore.locale === 'zh-CN'
+      ? '当前结果跑赢基准，先看交易点和月度解释是否一致。'
+      : 'This run is ahead of the benchmark. Check whether trade markers and monthly explanations agree.'
+  }
+  return localeStore.locale === 'zh-CN'
+    ? '当前结果还不够强，优先复盘回撤和月度交易节奏。'
+    : 'This run is still fragile. Review drawdown and monthly trade rhythm first.'
+})
+
+const uiActiveMonthNote = computed(() => {
+  if (!activeMonth.value) {
+    return localeStore.locale === 'zh-CN'
+      ? '默认先显示整个所选周期的交易和权益曲线；如需细看某个月，再点月份卡片过滤。'
+      : 'Start from the full equity curve and full trade list, then drill down by month if needed.'
   }
   return localeStore.locale === 'zh-CN'
     ? `${activeMonth.value.month} 以 ${dominantAction(activeMonth.value)} 为主，交易 ${activeMonth.value.trade_count} 次。`
@@ -116,7 +144,7 @@ function dominantAction(summary: MonthlyTradeSummary) {
 watch(
   () => latestRun.value?.job_id,
   () => {
-    selectedMonth.value = latestRun.value?.monthly_trade_summaries.at(-1)?.month ?? null
+    selectedMonth.value = null
   },
 )
 
@@ -132,7 +160,7 @@ onMounted(() => {
         <div class="eyebrow">{{ localeStore.t('strategy.eyebrow') }}</div>
         <h2>{{ localeStore.t('strategy.runResults') }}</h2>
         <p>{{ localeStore.t('strategy.description') }}</p>
-        <p class="hero-note">{{ runHeadline }}</p>
+        <p class="hero-note">{{ uiRunHeadline }}</p>
       </div>
       <div class="hero-metrics">
         <MetricTile
@@ -140,7 +168,7 @@ onMounted(() => {
           :value="selectedStrategy.label"
         />
         <MetricTile
-          :label="localeStore.locale === 'zh-CN' ? '已选择月份' : 'Focus Month'"
+          :label="localeStore.locale === 'zh-CN' ? '已选月份' : 'Focus Month'"
           :value="selectedMonth ?? (localeStore.locale === 'zh-CN' ? '全部' : 'All')"
         />
       </div>
@@ -172,7 +200,7 @@ onMounted(() => {
             <div class="results-copy">
               <div class="eyebrow">{{ latestRun.symbol }}</div>
               <h3>{{ selectedStrategy.label }}</h3>
-              <p>{{ runHeadline }}</p>
+              <p>{{ uiRunHeadline }}</p>
             </div>
             <div class="results-status glass-line">
               <div class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '结果状态' : 'Run Status' }}</div>
@@ -217,7 +245,7 @@ onMounted(() => {
           <SectionPanel :title="localeStore.t('strategy.monthlyExplainer')" :subtitle="localeStore.t('strategy.monthlyHeatmap')">
             <div class="monthly-summary glass-line">
               <div class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '月份解读' : 'Monthly Read' }}</div>
-              <p>{{ activeMonthNote }}</p>
+              <p>{{ uiActiveMonthNote }}</p>
             </div>
             <MonthlyHeatmap :points="latestRun.monthly_returns" />
             <div class="monthly-grid">

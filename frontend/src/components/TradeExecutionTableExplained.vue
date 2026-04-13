@@ -30,7 +30,7 @@ const localeStore = useLocaleStore()
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows.slice(0, 24)" :key="`${row.timestamp}-${row.action}-${row.price}`">
+        <tr v-for="row in rows" :key="`${row.timestamp}-${row.action}-${row.price}`">
           <td>{{ new Date(row.timestamp).toLocaleString() }}</td>
           <td>{{ translateTradeAction(row.action, localeStore.locale) }}</td>
           <td>{{ row.price.toFixed(2) }}</td>
