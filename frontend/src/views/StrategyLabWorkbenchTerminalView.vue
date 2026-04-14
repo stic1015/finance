@@ -9,7 +9,7 @@ import PerformanceTradeChartExplained from '@/components/PerformanceTradeChartEx
 import ResearchStrategyFormClean from '@/components/ResearchStrategyFormClean.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
 import TradeExecutionTableExplained from '@/components/TradeExecutionTableExplained.vue'
-import { FALLBACK_STRATEGIES } from '@/constants/strategies'
+import { FALLBACK_STRATEGIES, localizeStrategies } from '@/constants/strategies'
 import { useLocaleStore } from '@/stores/locale'
 import type { BacktestResult, MonthlyTradeSummary, StrategyDefinition } from '@/types'
 import { formatCurrency, formatPercent } from '@/utils/format'
@@ -22,12 +22,15 @@ const strategies = ref<StrategyDefinition[]>([])
 const selectedMonth = ref<string | null>(null)
 const loading = ref(false)
 const error = ref('')
+const localizedStrategies = computed(() =>
+  localizeStrategies(strategies.value.length ? strategies.value : FALLBACK_STRATEGIES, localeStore.locale),
+)
 
 const selectedStrategy = computed(() => {
   return (
-    strategies.value.find((item) => item.name === latestRun.value?.strategy) ??
-    strategies.value[0] ??
-    FALLBACK_STRATEGIES[0]
+    localizedStrategies.value.find((item) => item.name === latestRun.value?.strategy) ??
+    localizedStrategies.value[0] ??
+    localizeStrategies([FALLBACK_STRATEGIES[0]], localeStore.locale)[0]
   )
 })
 
@@ -106,6 +109,7 @@ async function loadStrategies() {
 async function submitBacktest(payload: {
   symbol: string
   strategy: string
+  interval: string
   start_date: string
   end_date: string
   params: Record<string, number>
@@ -177,7 +181,7 @@ onMounted(() => {
     <div class="lab-grid">
       <aside class="lab-sidebar">
         <SectionPanel :title="localeStore.t('strategy.controls')" :subtitle="localeStore.t('strategy.templateAndParams')">
-          <ResearchStrategyFormClean :strategies="strategies.length ? strategies : FALLBACK_STRATEGIES" @submit="submitBacktest" />
+          <ResearchStrategyFormClean :strategies="localizedStrategies" @submit="submitBacktest" />
         </SectionPanel>
 
         <SectionPanel :title="localeStore.locale === 'zh-CN' ? '策略摘要' : 'Strategy Summary'" :subtitle="localeStore.t('strategy.performanceAndNotes')">

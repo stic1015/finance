@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 
-import { FALLBACK_STRATEGIES, STRATEGY_FIELDS } from '@/constants/strategies'
+import { FALLBACK_STRATEGIES, getStrategyFields, localizeStrategies } from '@/constants/strategies'
 import { useLocaleStore } from '@/stores/locale'
 import type { StrategyDefinition } from '@/types'
 
@@ -10,6 +10,7 @@ const emit = defineEmits<{
     payload: {
       symbol: string
       strategy: string
+      interval: string
       start_date: string
       end_date: string
       params: Record<string, number>
@@ -22,18 +23,21 @@ const props = defineProps<{
 }>()
 
 const localeStore = useLocaleStore()
-const strategies = computed(() => (props.strategies?.length ? props.strategies : FALLBACK_STRATEGIES))
+const strategies = computed(() =>
+  localizeStrategies(props.strategies?.length ? props.strategies : FALLBACK_STRATEGIES, localeStore.locale),
+)
 
 const form = reactive({
   symbol: 'HK.00700',
   strategy: 'trend_strength_volatility_filter',
+  interval: '30m',
   start_date: '2024-01-01T00:00:00Z',
   end_date: '2025-01-01T00:00:00Z',
   params: {} as Record<string, number>,
 })
 
 const activeStrategy = computed(() => strategies.value.find((item) => item.name === form.strategy) ?? strategies.value[0])
-const activeFields = computed(() => STRATEGY_FIELDS[form.strategy] ?? [])
+const activeFields = computed(() => getStrategyFields(form.strategy, localeStore.locale))
 
 function syncDefaults() {
   const defaults = activeStrategy.value?.default_params ?? {}
@@ -50,6 +54,7 @@ function handleSubmit() {
   emit('submit', {
     symbol: form.symbol,
     strategy: form.strategy,
+    interval: form.interval,
     start_date: form.start_date,
     end_date: form.end_date,
     params: form.params,
@@ -69,6 +74,15 @@ function handleSubmit() {
         <option v-for="strategy in strategies" :key="strategy.name" :value="strategy.name">
           {{ strategy.label }}
         </option>
+      </select>
+    </label>
+    <label>
+      <span class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '回测周期' : 'Backtest Interval' }}</span>
+      <select v-model="form.interval">
+        <option value="1d">1d</option>
+        <option value="1h">1h</option>
+        <option value="30m">30m</option>
+        <option value="15m">15m</option>
       </select>
     </label>
     <div v-if="activeStrategy" class="strategy-hint glass-line">

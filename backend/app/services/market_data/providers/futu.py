@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 from datetime import UTC, datetime
 from pathlib import Path
@@ -10,12 +11,25 @@ from app.services.market_data.symbol import display_name_for, to_futu_code
 from .base import MarketDataProvider, ProviderUnavailableError
 
 
+def _fallback_change_percent(raw_change_percent: float | int | None, price: float, previous_close: float) -> float:
+    if raw_change_percent is not None and math.isfinite(float(raw_change_percent)):
+        if abs(float(raw_change_percent)) > 1e-9:
+            return float(raw_change_percent)
+        if previous_close <= 0:
+            return 0.0
+        if abs(price - previous_close) <= 1e-9:
+            return 0.0
+    if previous_close <= 0:
+        return 0.0
+    return (price - previous_close) / previous_close * 100
+
+
 class FutuMarketDataProvider(MarketDataProvider):
     source_name = "futu"
     region_symbols = {
-        "US": [("US.SPY", "标普500"), ("US.QQQ", "纳指100"), ("US.DIA", "道琼斯")],
-        "HK": [("HK.800000", "恒生指数"), ("HK.800700", "恒生科技"), ("HK.800100", "国企指数")],
-        "CN": [("SH.000001", "上证综指"), ("SZ.399001", "深证成指"), ("SZ.399006", "创业板指")],
+        "US": [("US.SPY", "S&P 500"), ("US.QQQ", "Nasdaq 100"), ("US.DIA", "Dow Jones")],
+        "HK": [("HK.800000", "Hang Seng"), ("HK.800700", "Hang Seng Tech"), ("HK.800100", "HSCEI")],
+        "CN": [("SH.000001", "SSE Composite"), ("SZ.399001", "SZSE Component"), ("SZ.399006", "ChiNext")],
     }
 
     def __init__(self, host: str, port: int, sdk_appdata_path: Path) -> None:
@@ -59,17 +73,19 @@ class FutuMarketDataProvider(MarketDataProvider):
                 raise ProviderUnavailableError(str(data))
         section_metrics = []
         for row, (_, label) in zip(data.to_dict("records"), metrics, strict=False):
+            price = float(row.get("last_price", 0.0))
+            previous_close = float(row.get("prev_close_price", 0.0))
             section_metrics.append(
                 MarketMetric(
                     label=label,
-                    value=float(row.get("last_price", 0.0)),
-                    change_percent=float(row.get("change_rate", 0.0)),
+                    value=price,
+                    change_percent=_fallback_change_percent(row.get("change_rate"), price, previous_close),
                     symbol=row["code"],
                 )
             )
         return OverviewSection(
             region=region,
-            title={"US": "美股时段", "HK": "港股时段", "CN": "A股时段"}[region],
+            title={"US": "US Session", "HK": "HK Session", "CN": "A-Share Session"}[region],
             source_status="live",
             metrics=section_metrics,
         )
@@ -81,13 +97,15 @@ class FutuMarketDataProvider(MarketDataProvider):
             if ret != 0 or data.empty:
                 raise ProviderUnavailableError(str(data))
             row = data.iloc[0]
+        price = float(row.get("last_price", 0.0))
+        previous_close = float(row.get("prev_close_price", 0.0))
         return MarketSnapshot(
             symbol=normalized,
             display_name=display_name_for(normalized),
-            price=float(row.get("last_price", 0.0)),
-            change=float(row.get("last_price", 0.0)) - float(row.get("prev_close_price", 0.0)),
-            change_percent=float(row.get("change_rate", 0.0)),
-            previous_close=float(row.get("prev_close_price", 0.0)),
+            price=price,
+            change=price - previous_close,
+            change_percent=_fallback_change_percent(row.get("change_rate"), price, previous_close),
+            previous_close=previous_close,
             open=float(row.get("open_price", 0.0)),
             high=float(row.get("high_price", 0.0)),
             low=float(row.get("low_price", 0.0)),
@@ -107,12 +125,15 @@ class FutuMarketDataProvider(MarketDataProvider):
             raise ProviderUnavailableError(
                 "futu package is not installed. Install futu-api and start OpenD."
             ) from exc
+
         interval_map = {
             "1d": (KLType.K_DAY, SubType.K_DAY),
             "1h": (KLType.K_60M, SubType.K_60M),
+            "30m": (KLType.K_30M, SubType.K_30M),
             "15m": (KLType.K_15M, SubType.K_15M),
         }
         ktype, sub_type = interval_map.get(interval, (KLType.K_DAY, SubType.K_DAY))
+
         with self._get_context() as quote_ctx:
             ret, data = quote_ctx.subscribe([normalized], [sub_type], subscribe_push=False)
             if ret != 0:
@@ -125,6 +146,7 @@ class FutuMarketDataProvider(MarketDataProvider):
             )
             if ret != 0:
                 raise ProviderUnavailableError(str(data))
+
         points = [
             CandlePoint(
                 timestamp=datetime.fromisoformat(str(row["time_key"])).replace(tzinfo=UTC),

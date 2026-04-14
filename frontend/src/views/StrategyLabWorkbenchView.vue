@@ -9,7 +9,7 @@ import PerformanceChart from '@/components/PerformanceChart.vue'
 import ResearchStrategyFormClean from '@/components/ResearchStrategyFormClean.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
 import TradeLogTable from '@/components/TradeLogTable.vue'
-import { FALLBACK_STRATEGIES } from '@/constants/strategies'
+import { FALLBACK_STRATEGIES, localizeStrategies } from '@/constants/strategies'
 import { useLocaleStore } from '@/stores/locale'
 import type { BacktestResult, StrategyDefinition } from '@/types'
 import { formatPercent } from '@/utils/format'
@@ -20,9 +20,16 @@ const runHistory = ref<BacktestResult[]>([])
 const strategies = ref<StrategyDefinition[]>([])
 const loading = ref(false)
 const error = ref('')
+const localizedStrategies = computed(() =>
+  localizeStrategies(strategies.value.length ? strategies.value : FALLBACK_STRATEGIES, localeStore.locale),
+)
 
 const selectedStrategy = computed(() => {
-  return strategies.value.find((item) => item.name === latestRun.value?.strategy) ?? strategies.value[0] ?? FALLBACK_STRATEGIES[0]
+  return (
+    localizedStrategies.value.find((item) => item.name === latestRun.value?.strategy) ??
+    localizedStrategies.value[0] ??
+    localizeStrategies([FALLBACK_STRATEGIES[0]], localeStore.locale)[0]
+  )
 })
 
 async function loadStrategies() {
@@ -36,6 +43,7 @@ async function loadStrategies() {
 async function submitBacktest(payload: {
   symbol: string
   strategy: string
+  interval: string
   start_date: string
   end_date: string
   params: Record<string, number>
@@ -75,7 +83,7 @@ onMounted(() => {
 
     <div class="lab-grid">
       <SectionPanel :title="localeStore.t('strategy.controls')" :subtitle="localeStore.t('strategy.templateAndParams')">
-        <ResearchStrategyFormClean :strategies="strategies.length ? strategies : FALLBACK_STRATEGIES" @submit="submitBacktest" />
+        <ResearchStrategyFormClean :strategies="localizedStrategies" @submit="submitBacktest" />
       </SectionPanel>
 
       <SectionPanel :title="localeStore.t('strategy.runResults')" :subtitle="localeStore.t('strategy.performanceAndNotes')">

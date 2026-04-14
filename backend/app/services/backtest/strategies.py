@@ -8,52 +8,52 @@ from app.schemas.models import StrategyDefinition
 STRATEGIES: dict[str, StrategyDefinition] = {
     "moving_average_trend": StrategyDefinition(
         name="moving_average_trend",
-        label="均线趋势跟随",
-        description="当短周期均线站上长周期均线时持有，适合作为最基础的趋势模板。",
-        category="基础模板",
-        style_tags=["趋势", "单资产", "低频"],
+        label="Moving Average Trend",
+        description="Hold when the fast moving average stays above the slow moving average.",
+        category="Template",
+        style_tags=["trend", "single-asset", "low-frequency"],
         market_scope=["US", "HK", "SH", "SZ"],
-        logic_summary="使用快慢均线金叉确认中期趋势，仓位二值化。",
+        logic_summary="Uses fast/slow moving average crossover to follow medium-term trend.",
         default_params={"fast_window": 20, "slow_window": 60},
     ),
     "rsi_bollinger_mean_reversion": StrategyDefinition(
         name="rsi_bollinger_mean_reversion",
-        label="RSI 布林带均值回归",
-        description="当价格跌破布林带下轨且 RSI 超卖时做均值回归，适合震荡区间。",
-        category="基础模板",
-        style_tags=["均值回归", "震荡", "技术指标"],
+        label="RSI Bollinger Mean Reversion",
+        description="Looks for oversold mean-reversion when price breaks lower Bollinger band and RSI is weak.",
+        category="Template",
+        style_tags=["mean-reversion", "range", "indicator"],
         market_scope=["US", "HK", "SH", "SZ"],
-        logic_summary="用布林带偏离和 RSI 超卖共振寻找回归窗口。",
+        logic_summary="Combines Bollinger deviation and RSI oversold conditions for mean-reversion entries.",
         default_params={"window": 20, "std_dev": 2, "rsi_period": 14},
     ),
     "donchian_volume_breakout": StrategyDefinition(
         name="donchian_volume_breakout",
-        label="唐奇安通道放量突破",
-        description="只在价格创出通道新高且成交量放大时参与突破，过滤假突破。",
-        category="基础模板",
-        style_tags=["突破", "量价", "趋势"],
+        label="Donchian Volume Breakout",
+        description="Participates in breakouts only when price breaks prior channel high with volume expansion.",
+        category="Template",
+        style_tags=["breakout", "volume", "trend"],
         market_scope=["US", "HK", "SH", "SZ"],
-        logic_summary="价格突破前高且成交量显著放大时开仓。",
+        logic_summary="Enters on Donchian channel breakout confirmed by above-average volume.",
         default_params={"channel_window": 20, "volume_window": 20, "volume_multiplier": 1.2},
     ),
     "macd_trend_confirmation": StrategyDefinition(
         name="macd_trend_confirmation",
-        label="MACD 趋势确认",
-        description="用 MACD 与 signal 线关系确认趋势是否延续，适合作为中期确认器。",
-        category="基础模板",
-        style_tags=["趋势", "动量", "技术指标"],
+        label="MACD Trend Confirmation",
+        description="Confirms trend persistence through MACD and signal-line relationship.",
+        category="Template",
+        style_tags=["trend", "momentum", "indicator"],
         market_scope=["US", "HK", "SH", "SZ"],
-        logic_summary="MACD 上穿并维持在信号线上方时保持多头仓位。",
+        logic_summary="Stays long while MACD remains above the signal line.",
         default_params={"fast": 12, "slow": 26, "signal": 9},
     ),
     "trend_strength_volatility_filter": StrategyDefinition(
         name="trend_strength_volatility_filter",
-        label="趋势强度 + 波动率过滤",
-        description="趋势为主、波动率为辅的机构化模板，只在强趋势且波动不过热时提高仓位。",
-        category="机构模板",
-        style_tags=["趋势", "波动率过滤", "仓位控制"],
-        market_scope=["HK", "SH", "SZ", "US"],
-        logic_summary="同时要求趋势方向、短期强度和波动率约束成立，仓位在 0 / 0.5 / 1 之间切换。",
+        label="Trend Strength + Volatility Filter",
+        description="Institutional-style template: trend direction with momentum and volatility constraints.",
+        category="Institutional",
+        style_tags=["trend", "volatility-filter", "position-sizing"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Allocates 0/0.5/1.0 exposure based on trend, strength, and volatility ratio.",
         default_params={
             "trend_window": 80,
             "strength_window": 20,
@@ -64,22 +64,22 @@ STRATEGIES: dict[str, StrategyDefinition] = {
     ),
     "relative_strength_regime_rotation": StrategyDefinition(
         name="relative_strength_regime_rotation",
-        label="相对强弱轮动",
-        description="用短中期相对强弱切换仓位，偏向持有处于强势状态的单资产。",
-        category="机构模板",
-        style_tags=["相对强弱", "状态切换", "仓位控制"],
-        market_scope=["HK", "SH", "SZ", "US"],
-        logic_summary="短周期强弱与中周期趋势同向时满仓，仅中周期趋势成立时半仓。",
+        label="Relative Strength Regime Rotation",
+        description="Adjusts exposure using short- and long-horizon relative strength regimes.",
+        category="Institutional",
+        style_tags=["relative-strength", "regime", "position-sizing"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Uses long regime floor for half position and short-term strength for full position.",
         default_params={"short_lookback": 20, "long_lookback": 90, "regime_floor": 0.02},
     ),
     "volume_price_breakout_risk_budget": StrategyDefinition(
         name="volume_price_breakout_risk_budget",
-        label="量价突破 + 风险预算",
-        description="突破策略加入 ATR 风险预算，波动越大仓位越低，更像真实研究模板。",
-        category="机构模板",
-        style_tags=["突破", "风险预算", "ATR"],
-        market_scope=["HK", "SH", "SZ", "US"],
-        logic_summary="价格突破与成交量扩张共振时开仓，再按 ATR 风险预算动态收缩仓位。",
+        label="Volume Price Breakout + Risk Budget",
+        description="Breakout template with ATR-based risk budgeting for dynamic exposure.",
+        category="Institutional",
+        style_tags=["breakout", "risk-budget", "atr"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Combines channel breakout, volume confirmation, and ATR risk budget sizing.",
         default_params={
             "channel_window": 55,
             "volume_window": 20,
@@ -90,12 +90,12 @@ STRATEGIES: dict[str, StrategyDefinition] = {
     ),
     "multi_factor_scoring": StrategyDefinition(
         name="multi_factor_scoring",
-        label="多因子评分模板",
-        description="用趋势、波动、成交量和相对强弱四类因子打分，生成分层仓位。",
-        category="机构模板",
-        style_tags=["多因子", "评分", "仓位分层"],
-        market_scope=["HK", "SH", "SZ", "US"],
-        logic_summary="四个基础因子分别打分，得分越高仓位越高，适合作为研究型模板。",
+        label="Multi-factor Scoring",
+        description="Scores trend, momentum, volume, and volatility factors to derive exposure.",
+        category="Institutional",
+        style_tags=["multi-factor", "scoring", "layered-exposure"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Builds a normalized factor score and enters when score exceeds threshold.",
         default_params={
             "trend_window": 60,
             "momentum_window": 20,
@@ -104,7 +104,66 @@ STRATEGIES: dict[str, StrategyDefinition] = {
             "entry_threshold": 0.5,
         },
     ),
+    "sar_ema144_breakout": StrategyDefinition(
+        name="sar_ema144_breakout",
+        label="SAR + EMA144 Breakout",
+        description="Tracks breakouts only when close is above EMA144 and above Parabolic SAR.",
+        category="Institutional",
+        style_tags=["breakout", "psar", "ema"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Long-only signal turns on when close exceeds both EMA144 and PSAR trend support.",
+        default_params={"ema_window": 144, "sar_step": 0.02, "sar_max": 0.2},
+    ),
 }
+
+
+def _parabolic_sar(high: pd.Series, low: pd.Series, step: float, max_step: float) -> pd.Series:
+    if high.empty:
+        return pd.Series(dtype=float, index=high.index)
+
+    sar = [float(low.iloc[0])]
+    trend_up = True
+    extreme_point = float(high.iloc[0])
+    acceleration = step
+
+    for index in range(1, len(high)):
+        prev_sar = sar[-1]
+        current_sar = prev_sar + acceleration * (extreme_point - prev_sar)
+
+        if trend_up:
+            if index >= 2:
+                current_sar = min(current_sar, float(low.iloc[index - 1]), float(low.iloc[index - 2]))
+            else:
+                current_sar = min(current_sar, float(low.iloc[index - 1]))
+
+            if float(low.iloc[index]) < current_sar:
+                trend_up = False
+                current_sar = extreme_point
+                extreme_point = float(low.iloc[index])
+                acceleration = step
+            else:
+                if float(high.iloc[index]) > extreme_point:
+                    extreme_point = float(high.iloc[index])
+                    acceleration = min(acceleration + step, max_step)
+        else:
+            if index >= 2:
+                current_sar = max(current_sar, float(high.iloc[index - 1]), float(high.iloc[index - 2]))
+            else:
+                current_sar = max(current_sar, float(high.iloc[index - 1]))
+
+            if float(high.iloc[index]) > current_sar:
+                trend_up = True
+                current_sar = extreme_point
+                extreme_point = float(high.iloc[index])
+                acceleration = step
+            else:
+                if float(low.iloc[index]) < extreme_point:
+                    extreme_point = float(low.iloc[index])
+                    acceleration = min(acceleration + step, max_step)
+
+        sar.append(current_sar)
+
+    return pd.Series(sar, index=high.index, dtype=float)
 
 
 def build_signal_frame(dataframe: pd.DataFrame, strategy: str, params: dict) -> pd.Series:
@@ -220,11 +279,20 @@ def build_signal_frame(dataframe: pd.DataFrame, strategy: str, params: dict) -> 
         volume_factor = (volume > volume.rolling(volume_window).mean()).astype(float)
         volatility_factor = (
             close.pct_change().rolling(volatility_window).std()
-            <= close.pct_change().rolling(volatility_window * 2).std().fillna(method="bfill")
+            <= close.pct_change().rolling(volatility_window * 2).std().bfill()
         ).astype(float)
         score = (trend_factor + momentum_factor + volume_factor + volatility_factor) / 4
         signal = pd.Series(0.0, index=dataframe.index)
         signal[score >= entry_threshold] = score[score >= entry_threshold]
         return signal.fillna(0.0)
+
+    if strategy == "sar_ema144_breakout":
+        ema_window = int(params.get("ema_window", 144))
+        sar_step = float(params.get("sar_step", 0.02))
+        sar_max = float(params.get("sar_max", 0.2))
+        ema = close.ewm(span=ema_window, adjust=False).mean()
+        psar = _parabolic_sar(dataframe["high"], dataframe["low"], sar_step, sar_max)
+        signal = ((close > ema) & (close > psar)).astype(float)
+        return signal.replace(0.0, pd.NA).ffill().fillna(0.0)
 
     raise ValueError(f"Unsupported strategy: {strategy}")

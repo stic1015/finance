@@ -2,21 +2,29 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { apiGet, apiPost } from '@/api/client'
-import { FALLBACK_STRATEGIES } from '@/constants/strategies'
+import { FALLBACK_STRATEGIES, localizeStrategies } from '@/constants/strategies'
 import MetricTile from '@/components/MetricTile.vue'
 import PerformanceChart from '@/components/PerformanceChart.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
 import StrategyWorkbenchForm from '@/components/StrategyWorkbenchForm.vue'
 import type { BacktestResult, StrategyDefinition } from '@/types'
 import { formatPercent } from '@/utils/format'
+import { useLocaleStore } from '@/stores/locale'
 
+const localeStore = useLocaleStore()
 const backtest = ref<BacktestResult | null>(null)
 const loading = ref(false)
 const error = ref('')
 const strategies = ref<StrategyDefinition[]>([])
+const localizedStrategies = computed(() =>
+  localizeStrategies(strategies.value.length ? strategies.value : FALLBACK_STRATEGIES, localeStore.locale),
+)
 
 const selectedStrategy = computed(
-  () => strategies.value.find((item) => item.name === backtest.value?.strategy) ?? strategies.value[0] ?? FALLBACK_STRATEGIES[0],
+  () =>
+    localizedStrategies.value.find((item) => item.name === backtest.value?.strategy) ??
+    localizedStrategies.value[0] ??
+    localizeStrategies([FALLBACK_STRATEGIES[0]], localeStore.locale)[0],
 )
 
 async function loadStrategies() {
@@ -30,6 +38,7 @@ async function loadStrategies() {
 async function submitBacktest(payload: {
   symbol: string
   strategy: string
+  interval: string
   start_date: string
   end_date: string
   params: Record<string, number>
@@ -68,7 +77,7 @@ onMounted(() => {
 
     <div class="lab-grid">
       <SectionPanel title="策略控制台" subtitle="模板与参数">
-        <StrategyWorkbenchForm :strategies="strategies.length ? strategies : FALLBACK_STRATEGIES" @submit="submitBacktest" />
+        <StrategyWorkbenchForm :strategies="localizedStrategies" @submit="submitBacktest" />
       </SectionPanel>
 
       <SectionPanel title="回测结果" subtitle="收益表现与研究备注">

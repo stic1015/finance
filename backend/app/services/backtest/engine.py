@@ -41,6 +41,13 @@ def validate_strategy_params(strategy: str, params: dict) -> dict:
         raise ValueError("vol_short must be smaller than vol_long.")
     if strategy == "relative_strength_regime_rotation" and merged["short_lookback"] >= merged["long_lookback"]:
         raise ValueError("short_lookback must be smaller than long_lookback.")
+    if strategy == "sar_ema144_breakout":
+        if merged["ema_window"] < 2:
+            raise ValueError("ema_window must be at least 2.")
+        if merged["sar_step"] <= 0:
+            raise ValueError("sar_step must be greater than 0.")
+        if merged["sar_max"] < merged["sar_step"]:
+            raise ValueError("sar_max must be greater than or equal to sar_step.")
     return merged
 
 

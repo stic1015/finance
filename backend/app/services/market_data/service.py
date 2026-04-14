@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 import socket
 
@@ -9,6 +10,17 @@ from app.services.market_data.providers.base import ProviderUnavailableError
 from app.services.market_data.providers.fixture import FixtureMarketDataProvider
 from app.services.market_data.providers.futu import FutuMarketDataProvider
 from app.services.market_data.symbol import aliases_for, display_name_for, normalize_symbol, to_futu_code
+
+
+def _resolve_change_percent(change_percent: float, price: float, previous_close: float) -> float:
+    if math.isfinite(change_percent):
+        if abs(change_percent) > 1e-9:
+            return change_percent
+        if previous_close > 0 and abs(price - previous_close) <= 1e-9:
+            return 0.0
+    if previous_close <= 0:
+        return 0.0
+    return (price - previous_close) / previous_close * 100
 
 
 class MarketDataService:
@@ -96,19 +108,22 @@ class MarketDataService:
         if isinstance(self.primary_provider, FutuMarketDataProvider) and self.settings.enable_fixture_mode:
             return self._build_mixed_market_overview(watchlist)
         try:
-            return self.primary_provider.get_market_overview(watchlist)
+            overview = self.primary_provider.get_market_overview(watchlist)
         except ProviderUnavailableError:
             if not self.settings.enable_fixture_mode:
                 raise
-            return self.fixture_provider.get_market_overview(watchlist)
+            overview = self.fixture_provider.get_market_overview(watchlist)
+        overview.watchlist = [self._normalize_snapshot(snapshot) for snapshot in overview.watchlist]
+        return overview
 
     def get_snapshot(self, symbol: str) -> MarketSnapshot:
         try:
-            return self.primary_provider.get_snapshot(symbol)
+            snapshot = self.primary_provider.get_snapshot(symbol)
         except ProviderUnavailableError:
             if not self.settings.enable_fixture_mode:
                 raise
-            return self.fixture_provider.get_snapshot(symbol)
+            snapshot = self.fixture_provider.get_snapshot(symbol)
+        return self._normalize_snapshot(snapshot)
 
     def get_candles(self, symbol: str, interval: str = "1d", limit: int = 180) -> CandleSeries:
         try:
@@ -140,7 +155,7 @@ class MarketDataService:
             except ProviderUnavailableError:
                 snapshot = self.fixture_provider.get_snapshot(symbol)
                 used_fixture = True
-            snapshots.append(snapshot)
+            snapshots.append(self._normalize_snapshot(snapshot))
 
         if used_live and used_fixture:
             provider = f"{self.primary_provider.source_name}+{self.fixture_provider.source_name}"
@@ -160,3 +175,13 @@ class MarketDataService:
             top_news=[],
             watchlist=snapshots,
         )
+
+    def _normalize_snapshot(self, snapshot: MarketSnapshot) -> MarketSnapshot:
+        resolved = _resolve_change_percent(
+            snapshot.change_percent,
+            snapshot.price,
+            snapshot.previous_close,
+        )
+        if abs(resolved - snapshot.change_percent) <= 1e-9:
+            return snapshot
+        return snapshot.model_copy(update={"change_percent": resolved})

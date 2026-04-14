@@ -34,6 +34,7 @@ const backtest = ref<BacktestResult | null>(null)
 const overview = ref<MarketOverview | null>(null)
 const loading = ref(false)
 const error = ref('')
+const analysisInterval = ref<'1d' | '1h' | '30m' | '15m'>('30m')
 
 const newsItems = computed(() => newsFeed.value?.items ?? [])
 const newsEmptyMessage = computed(() =>
@@ -167,7 +168,7 @@ async function loadResearch() {
   try {
     const [snapshotResponse, candleResponse, newsResponse, overviewResponse] = await Promise.all([
       apiGet<MarketSnapshot>(`/api/stocks/${symbol.value}/snapshot`),
-      apiGet<CandleSeries>(`/api/stocks/${symbol.value}/candles?interval=1d&limit=200`),
+      apiGet<CandleSeries>(`/api/stocks/${symbol.value}/candles?interval=${analysisInterval.value}&limit=200`),
       apiGet<NewsFeedResponse>(`/api/stocks/${symbol.value}/news`),
       apiGet<MarketOverview>('/api/markets/overview'),
     ])
@@ -178,12 +179,13 @@ async function loadResearch() {
     marketBriefs.value = await apiGet<NewsFeedResponse>('/api/markets/briefs')
     forecast.value = await apiPost<Forecast5DResult>('/api/forecasts/5d', {
       symbol: symbol.value,
-      interval: '1d',
+      interval: analysisInterval.value,
       lookback: 260,
     })
     const job = await apiPost<BacktestResult>('/api/backtests', {
       symbol: symbol.value,
       strategy: 'trend_strength_volatility_filter',
+      interval: analysisInterval.value,
       start_date: '2024-01-01T00:00:00Z',
       end_date: '2025-01-01T00:00:00Z',
       params: { trend_window: 80, strength_window: 20, vol_short: 10, vol_long: 30, max_vol_ratio: 1.15 },
@@ -211,6 +213,9 @@ function addForecastAlert() {
 }
 
 watch(symbol, () => {
+  void loadResearch()
+})
+watch(analysisInterval, () => {
   void loadResearch()
 })
 
@@ -253,6 +258,15 @@ onMounted(() => {
             <RouterLink class="hero-link" to="/strategy-lab">
               {{ localeStore.locale === 'zh-CN' ? '进入策略实验室' : 'Open Strategy Lab' }}
             </RouterLink>
+            <label class="interval-select">
+              <span>{{ localeStore.locale === 'zh-CN' ? '周期' : 'Interval' }}</span>
+              <select v-model="analysisInterval">
+                <option value="1d">1d</option>
+                <option value="1h">1h</option>
+                <option value="30m">30m</option>
+                <option value="15m">15m</option>
+              </select>
+            </label>
           </div>
         </div>
         <div class="hero-sidebar">
@@ -477,6 +491,22 @@ onMounted(() => {
 .hero-link {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
+  color: var(--text);
+}
+
+.interval-select {
+  display: inline-grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.interval-select select {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(4, 10, 16, 0.75);
   color: var(--text);
 }
 

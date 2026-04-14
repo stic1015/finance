@@ -11,28 +11,30 @@ from app.services.news.providers.alpha_vantage import (
     AlphaVantageRateLimitError,
 )
 from app.services.news.providers.keyword import KeywordNewsProvider
+from app.services.news.providers.rss import RssNewsProvider
 
 
 class NewsService:
     sample_symbols = ["US.AAPL", "HK.00700", "SH.600519"]
     sector_topics = {
-        "HK.00700": ["腾讯", "港股互联网", "游戏"],
-        "HK.09988": ["阿里巴巴", "港股互联网", "电商"],
-        "HK.03690": ["美团", "本地生活", "消费"],
-        "HK.01810": ["小米", "消费电子", "智能硬件"],
-        "HK.00981": ["中芯国际", "半导体", "芯片"],
-        "SH.600519": ["白酒", "消费", "贵州茅台"],
-        "SH.601318": ["保险", "金融", "中国平安"],
-        "SH.600036": ["银行", "金融", "招商银行"],
-        "SZ.300750": ["新能源车", "动力电池", "宁德时代"],
-        "SZ.002594": ["新能源车", "比亚迪", "整车"],
-        "SZ.000001": ["银行", "金融", "平安银行"],
+        "HK.00700": ["Tencent", "Hong Kong internet", "gaming"],
+        "HK.09988": ["Alibaba", "Hong Kong internet", "e-commerce"],
+        "HK.03690": ["Meituan", "local services", "consumer"],
+        "HK.01810": ["Xiaomi", "consumer electronics", "smart devices"],
+        "HK.00981": ["SMIC", "semiconductor", "chip"],
+        "SH.600519": ["Kweichow Moutai", "consumer", "liquor"],
+        "SH.601318": ["Ping An", "insurance", "financials"],
+        "SH.600036": ["China Merchants Bank", "bank", "financials"],
+        "SZ.300750": ["CATL", "EV battery", "new energy"],
+        "SZ.002594": ["BYD", "EV", "automobile"],
+        "SZ.000001": ["Ping An Bank", "bank", "financials"],
     }
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.alpha_provider = AlphaVantageNewsProvider(settings.alpha_vantage_api_key)
         self.keyword_provider = KeywordNewsProvider()
+        self.rss_provider = RssNewsProvider()
 
     def diagnose(self) -> ProviderDiagnostic:
         if not self.alpha_provider.api_key:
@@ -40,8 +42,8 @@ class NewsService:
                 provider=self.alpha_provider.source_name,
                 status="unavailable",
                 detail=(
-                    "ALPHA_VANTAGE_API_KEY is missing. The API can still surface empty-state diagnostics, "
-                    "but it cannot fetch live attributed headlines."
+                    "ALPHA_VANTAGE_API_KEY is missing. The API can still return empty-state diagnostics, "
+                    "but live attributed headlines are unavailable."
                 ),
                 sample_symbols=self.sample_symbols,
             )
@@ -50,8 +52,8 @@ class NewsService:
             provider=self.alpha_provider.source_name,
             status="live",
             detail=(
-                "Alpha Vantage credentials are configured. The service will query NEWS_SENTIMENT first "
-                "and then use alias-based keyword backfill when direct attribution is sparse."
+                "Alpha Vantage credentials are configured. The service queries NEWS_SENTIMENT first, "
+                "then uses keyword and RSS fallback only when direct attribution is sparse."
             ),
             sample_symbols=self.sample_symbols,
         )
@@ -59,10 +61,13 @@ class NewsService:
     async def get_news_for_symbol(self, symbol: str) -> NewsFeedResponse:
         aliases = aliases_for(symbol)
         normalized = [alias for alias in aliases if "." in alias and alias.count(".") == 1]
-        alpha_items = []
-        keyword_items = []
-        sector_items = []
-        provider = self.alpha_provider.source_name
+
+        alpha_items: list[NewsItem] = []
+        keyword_items: list[NewsItem] = []
+        rss_items: list[NewsItem] = []
+        sector_keyword_items: list[NewsItem] = []
+        sector_rss_items: list[NewsItem] = []
+
         source_status = "live"
         feed_type = "stock"
         empty_reason: str | None = None
@@ -74,8 +79,7 @@ class NewsService:
             source_status = "unavailable"
             empty_reason = "rate_limited"
             message = (
-                "Alpha Vantage rate-limited the request. Wait for the quota window to reset, "
-                "or add a higher-capacity news provider."
+                "Alpha Vantage rate-limited the request. Wait for quota reset or add a higher-capacity provider."
             )
         except (AlphaVantageNewsError, httpx.HTTPError) as exc:
             source_status = "unavailable"
@@ -83,33 +87,47 @@ class NewsService:
             message = f"Alpha Vantage request failed: {exc}"
 
         keyword_items = await self.keyword_provider.search(aliases, matched_symbols=[symbol])
-        if not alpha_items and not keyword_items:
-            sector_items = await self.keyword_provider.search(self.sector_topics_for(symbol), matched_symbols=[symbol])
-        merged = self._dedupe(alpha_items + keyword_items + sector_items)
+
+        # RSS is a supplement source and only used when direct attributed headlines are absent.
+        if not alpha_items:
+            rss_items = await self.rss_provider.search(aliases, matched_symbols=[symbol])
+
+        if not alpha_items and not keyword_items and not rss_items:
+            topics = self.sector_topics_for(symbol)
+            sector_keyword_items = await self.keyword_provider.search(topics, matched_symbols=[symbol])
+            sector_rss_items = await self.rss_provider.search(topics, matched_symbols=[symbol])
+
+        merged = self._dedupe(alpha_items + keyword_items + rss_items + sector_keyword_items + sector_rss_items)
         sorted_items = sorted(merged, key=lambda item: item.published_at, reverse=True)
 
-        if alpha_items and keyword_items:
-            provider = f"{self.alpha_provider.source_name}+{self.keyword_provider.source_name}"
+        providers: list[str] = []
+        if alpha_items:
+            providers.append(self.alpha_provider.source_name)
+        if keyword_items or sector_keyword_items:
+            providers.append(self.keyword_provider.source_name)
+        if rss_items or sector_rss_items:
+            providers.append(self.rss_provider.source_name)
+
+        provider = "+".join(providers) if providers else self.alpha_provider.source_name
+
+        if alpha_items and (keyword_items or rss_items):
             source_status = "live"
             feed_type = "mixed"
-            message = "Direct attributed headlines were enriched with alias-based keyword backfill."
+            message = "Direct attributed headlines were supplemented with keyword/RSS backfill coverage."
         elif alpha_items:
-            provider = self.alpha_provider.source_name
             source_status = "live"
             feed_type = "stock"
             message = "Live attributed headlines are available from Alpha Vantage."
-        elif keyword_items:
-            provider = self.keyword_provider.source_name
+        elif keyword_items or rss_items:
             source_status = "delayed"
             feed_type = "stock"
-            empty_reason = "keyword_only"
-            message = "No directly attributed headlines were found. Showing alias-based fallback coverage."
-        elif sector_items:
-            provider = self.keyword_provider.source_name
+            empty_reason = "keyword_or_rss_only"
+            message = "No directly attributed headlines found. Showing keyword/RSS fallback coverage."
+        elif sector_keyword_items or sector_rss_items:
             source_status = "delayed"
             feed_type = "sector"
             empty_reason = "sector_only"
-            message = "No stock-specific headlines were found. Showing sector briefs instead."
+            message = "No stock-specific headlines found. Showing sector-level briefs instead."
         elif not self.alpha_provider.api_key:
             source_status = "unavailable"
             empty_reason = "missing_api_key"
@@ -120,7 +138,7 @@ class NewsService:
         elif empty_reason is None:
             source_status = "live"
             empty_reason = "no_results"
-            message = "The live provider responded successfully, but no attributable headlines matched this symbol."
+            message = "Live provider responded successfully, but no attributable headlines matched this symbol."
 
         return NewsFeedResponse(
             symbol=symbol,
@@ -133,13 +151,22 @@ class NewsService:
         )
 
     async def get_market_briefs(self) -> NewsFeedResponse:
-        items = await self.keyword_provider.search(
-            ["港股", "A股", "半导体", "新能源车", "金融"],
-            matched_symbols=["HK", "CN"],
-        )
+        topics = ["Hong Kong stocks", "A-shares", "semiconductor", "new energy vehicles", "financials"]
+        keyword_items = await self.keyword_provider.search(topics, matched_symbols=["HK", "CN"])
+        rss_items = await self.rss_provider.search(topics, matched_symbols=["HK", "CN"])
+        merged = self._dedupe(keyword_items + rss_items)
+        items = sorted(merged, key=lambda item: item.published_at, reverse=True)
+
+        providers: list[str] = []
+        if keyword_items:
+            providers.append(self.keyword_provider.source_name)
+        if rss_items:
+            providers.append(self.rss_provider.source_name)
+        provider = "+".join(providers) if providers else "none"
+
         return NewsFeedResponse(
             symbol="MARKET",
-            provider=self.keyword_provider.source_name if items else "none",
+            provider=provider,
             source_status="delayed" if items else "unavailable",
             feed_type="sector",
             items=items,
@@ -154,8 +181,8 @@ class NewsService:
         seen: set[str] = set()
         unique: list[NewsItem] = []
         for item in items:
-            key = item.url or item.title.lower()
-            if key in seen:
+            key = (item.url or item.title).strip().lower()
+            if not key or key in seen:
                 continue
             seen.add(key)
             unique.append(item)

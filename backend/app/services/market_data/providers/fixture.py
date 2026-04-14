@@ -19,9 +19,9 @@ from .base import MarketDataProvider
 
 
 INDEX_MAP = {
-    "US": [("US.SPY", "标普500"), ("US.QQQ", "纳指100"), ("US.DIA", "道琼斯")],
-    "HK": [("HK.800000", "恒生指数"), ("HK.800700", "恒生科技"), ("HK.800100", "国企指数")],
-    "CN": [("SH.000001", "上证综指"), ("SZ.399001", "深证成指"), ("SZ.399006", "创业板指")],
+    "US": [("US.SPY", "S&P 500"), ("US.QQQ", "Nasdaq 100"), ("US.DIA", "Dow Jones")],
+    "HK": [("HK.800000", "Hang Seng"), ("HK.800700", "Hang Seng Tech"), ("HK.800100", "HSCEI")],
+    "CN": [("SH.000001", "SSE Composite"), ("SZ.399001", "SZSE Component"), ("SZ.399006", "ChiNext")],
 }
 
 
@@ -45,7 +45,7 @@ class FixtureMarketDataProvider(MarketDataProvider):
             )
         return OverviewSection(
             region=region,
-            title={"US": "美股时段", "HK": "港股时段", "CN": "A股时段"}[region],
+            title={"US": "US Session", "HK": "HK Session", "CN": "A-Share Session"}[region],
             source_status="fixture",
             metrics=section_metrics,
         )
@@ -57,7 +57,7 @@ class FixtureMarketDataProvider(MarketDataProvider):
             NewsItem(
                 id="fixture-1",
                 title="Macro liquidity cools while AI capex remains resilient",
-                summary="Fixture news for UI verification. Replace with Alpha Vantage or keyword adapters.",
+                summary="Fixture news for UI verification. Replace with live news providers in production.",
                 url="https://example.com/fixture-news-1",
                 source="Fixture Wire",
                 published_at=datetime.now(tz=UTC) - timedelta(minutes=18),
@@ -68,7 +68,7 @@ class FixtureMarketDataProvider(MarketDataProvider):
             NewsItem(
                 id="fixture-2",
                 title="Consumer and platform names diverge across Asia session",
-                summary="Fixture news keeps the overview feed usable before credentials are added.",
+                summary="Fixture news keeps overview feed usable before live credentials are configured.",
                 url="https://example.com/fixture-news-2",
                 source="Fixture Wire",
                 published_at=datetime.now(tz=UTC) - timedelta(minutes=42),
@@ -94,8 +94,8 @@ class FixtureMarketDataProvider(MarketDataProvider):
         previous_close = round(rng.uniform(40, 500), 2)
         move = round(rng.uniform(-0.05, 0.05) * previous_close, 2)
         price = round(previous_close + move, 2)
-        high = round(max(price, previous_close) + abs(rng.uniform(0.1, 0.03) * previous_close), 2)
-        low = round(min(price, previous_close) - abs(rng.uniform(0.1, 0.03) * previous_close), 2)
+        high = round(max(price, previous_close) + abs(rng.uniform(0.01, 0.03) * previous_close), 2)
+        low = round(min(price, previous_close) - abs(rng.uniform(0.01, 0.03) * previous_close), 2)
         return MarketSnapshot(
             symbol=normalized,
             display_name=display_name_for(normalized),
@@ -120,8 +120,17 @@ class FixtureMarketDataProvider(MarketDataProvider):
         points: list[CandlePoint] = []
         current = base
         now = datetime.now(tz=UTC)
+
+        interval_delta_map = {
+            "1d": timedelta(days=1),
+            "1h": timedelta(hours=1),
+            "30m": timedelta(minutes=30),
+            "15m": timedelta(minutes=15),
+        }
+        delta = interval_delta_map.get(interval, timedelta(days=1))
+
         for index in range(limit):
-            timestamp = now - timedelta(days=limit - index)
+            timestamp = now - delta * (limit - index)
             drift = rng.uniform(-0.025, 0.03)
             open_price = current
             close_price = max(1.0, open_price * (1 + drift))
@@ -139,4 +148,5 @@ class FixtureMarketDataProvider(MarketDataProvider):
                 )
             )
             current = close_price
+
         return CandleSeries(symbol=normalized, interval=interval, source_status="fixture", points=points)

@@ -32,6 +32,32 @@ def test_strategy_validation_rejects_invalid_windows():
         raise AssertionError("Expected validation error for invalid moving average windows.")
 
 
+def test_sar_ema144_validation_rejects_invalid_params():
+    try:
+        validate_strategy_params(
+            "sar_ema144_breakout",
+            {"ema_window": 1, "sar_step": 0.02, "sar_max": 0.2},
+        )
+    except ValueError as exc:
+        assert "ema_window" in str(exc)
+    else:
+        raise AssertionError("Expected validation error for invalid SAR/EMA params.")
+
+
+def test_sar_ema144_backtest_runs():
+    request = BacktestRequest(
+        symbol="US.AAPL",
+        strategy="sar_ema144_breakout",
+        start_date=datetime(2024, 1, 1, tzinfo=UTC),
+        end_date=datetime(2024, 8, 1, tzinfo=UTC),
+        params={"ema_window": 144, "sar_step": 0.02, "sar_max": 0.2},
+    )
+    result = run_backtest(request, build_candles(320))
+    assert result.status == "completed"
+    assert result.metrics is not None
+    assert len(result.equity_curve) > 0
+
+
 def test_backtest_runs_without_lookahead_crash():
     request = BacktestRequest(
         symbol="US.AAPL",

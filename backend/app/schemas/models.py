@@ -18,6 +18,7 @@ StrategyName = Literal[
     "relative_strength_regime_rotation",
     "volume_price_breakout_risk_budget",
     "multi_factor_scoring",
+    "sar_ema144_breakout",
 ]
 
 
