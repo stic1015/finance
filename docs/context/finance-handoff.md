@@ -53,7 +53,7 @@ After every successful publish or repository push flow, update this file with at
 
 ## Current Snapshot
 
-- Completed This Release: established the Finance handoff documentation structure and separated archive context from rolling handoff state
-- Remaining Work: official publish entrypoint, strategy work, percentage fallback, RSS expansion
-- Recommended Next Step: implement the official publish entrypoint before resuming interrupted feature work
-- Latest Release Marker: `docs baseline created on 2026-04-14`
+- Completed This Release: Integrated release entrypoint, 30m interval support, SAR+EMA144 strategy, change_percent fallback, and RSS news aggregation with frontend wiring and tests.
+- Remaining Work: Observe production deployment health and perform post-deploy smoke checks for strategy/news/research pages.
+- Recommended Next Step: Verify Vercel deployment from latest commit and run quick live endpoint checks.
+- Latest Release Marker: $ReleaseMarker
