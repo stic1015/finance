@@ -105,7 +105,7 @@ function Update-HandoffFile {
 - Completed This Release: $CompletedText
 - Remaining Work: $RemainingText
 - Recommended Next Step: $NextStepText
-- Latest Release Marker: `$ReleaseMarker`
+- Latest Release Marker: `$ReleaseMarker
 "@
 
     $updated = [System.Text.RegularExpressions.Regex]::Replace(
