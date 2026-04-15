@@ -49,7 +49,7 @@ After every successful publish or repository push flow, update this file with at
 
 ## Current Snapshot
 
-- Completed This Release: Completed opportunity-engine integration on homepage (`single board flow`), cleaned active UI routes from encoding corruption, unified strategy metadata source into `strategies-clean.ts`, added four institutional strategy templates end-to-end, and cleaned opportunity reason text in backend service.
-- Remaining Work: Push current commit batch, confirm Vercel deploy status, and run one production smoke pass on opportunities + strategy lab + stock research pages.
-- Recommended Next Step: Trigger official publish flow, then validate live responses from `/api/markets/opportunities?markets=HK,CN&limit=60`.
-- Latest Release Marker: 2026-04-15T13:45:00+08:00 pending-push
+- Completed This Release: Released opportunity board API and UI, added four institutional strategies, and consolidated clean strategy metadata.
+- Remaining Work: Run production smoke checks for opportunities endpoint and strategy/research pages after deployment.
+- Recommended Next Step: Verify /api/markets/opportunities on production and validate action/reason rendering on homepage.
+- Latest Release Marker: $ReleaseMarker
