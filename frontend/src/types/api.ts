@@ -64,6 +64,29 @@ export interface MarketOverview {
   watchlist: MarketSnapshot[]
 }
 
+export type OpportunityAction = 'buy' | 'watch' | 'avoid'
+
+export interface OpportunityItem {
+  symbol: string
+  display_name: string
+  price: number
+  change_percent: number
+  action: OpportunityAction
+  score: number
+  risk_score: number
+  reasons: string[]
+}
+
+export interface MarketOpportunities {
+  generated_at: string
+  refresh_interval_sec: number
+  provider: string
+  source_status: SourceStatus
+  universe_size: number
+  scanned_size: number
+  items: OpportunityItem[]
+}
+
 export interface StrategyDefinition {
   name: string
   label: string

@@ -13,6 +13,7 @@ from app.services.backtest.jobs import BacktestJobService
 from app.services.forecast.service import ForecastService
 from app.services.market_data.service import MarketDataService
 from app.services.news.service import NewsService
+from app.services.opportunity.service import OpportunityService
 from app.storage.repositories import MemoryRepository, SQLiteRepository
 from app.tasks.scheduler import build_scheduler
 
@@ -40,6 +41,7 @@ async def lifespan(app: FastAPI):
     app.state.database_warning = database_warning
     app.state.market_service = market_service
     app.state.news_service = news_service
+    app.state.opportunity_service = OpportunityService(settings, market_service, news_service, repository)
     app.state.forecast_service = ForecastService(repository)
     app.state.backtest_jobs = backtest_jobs
     app.state.startup_checks = {

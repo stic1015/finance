@@ -58,6 +58,32 @@ def test_sar_ema144_backtest_runs():
     assert len(result.equity_curve) > 0
 
 
+def test_ema_adx_validation_rejects_invalid_windows():
+    try:
+        validate_strategy_params(
+            "ema_adx_trend_follow",
+            {"fast_ema": 89, "slow_ema": 21, "adx_window": 14, "adx_threshold": 20},
+        )
+    except ValueError as exc:
+        assert "fast_ema" in str(exc)
+    else:
+        raise AssertionError("Expected validation error for EMA/ADX window ordering.")
+
+
+def test_keltner_atr_breakout_backtest_runs():
+    request = BacktestRequest(
+        symbol="HK.00700",
+        strategy="keltner_atr_breakout",
+        start_date=datetime(2024, 1, 1, tzinfo=UTC),
+        end_date=datetime(2024, 8, 1, tzinfo=UTC),
+        params={"ema_window": 34, "atr_window": 20, "atr_multiplier": 1.8},
+    )
+    result = run_backtest(request, build_candles(320))
+    assert result.status == "completed"
+    assert result.metrics is not None
+    assert result.metrics.trade_count >= 0
+
+
 def test_backtest_runs_without_lookahead_crash():
     request = BacktestRequest(
         symbol="US.AAPL",

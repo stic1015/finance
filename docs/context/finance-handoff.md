@@ -8,12 +8,9 @@
 
 ## Current Goals And Priority
 
-1. Stabilize the Finance handoff workflow so project state survives interrupted sessions cleanly.
-2. Introduce a single official publish entrypoint that can own both repository push behavior and handoff refresh behavior.
-3. Resume unfinished product work in this order:
-   - new strategy support
-   - price-change percentage fallback
-   - RSS/news source expansion
+1. Finish the interrupted refactor as one release unit without reopening scope.
+2. Keep homepage, strategy lab, and stock research on clean text paths (no mojibake).
+3. Keep opportunities and strategy metadata interfaces stable for frontend consumption.
 
 ## Confirmed Technical And Process Constraints
 
@@ -27,13 +24,12 @@
 
 ## Unfinished Work And Recommended Order
 
-1. Finish the handoff document layer so future implementation does not lose context.
-2. Implement the official publish entrypoint that updates this file after a successful push.
-3. Resume backend and frontend functional work for:
-   - strategy expansion
-   - percentage fallback behavior
-   - RSS provider expansion
-4. Revisit `backend/app/services/backtest/strategies.py` carefully because the prior execution pass stopped at dirty or corrupted strategy text content.
+1. Complete GitHub push and verify Vercel production deployment for the current refactor batch.
+2. Run post-deploy smoke checks for:
+   - `/api/markets/opportunities`
+   - strategy lab new strategy templates
+   - stock research interval switching (`1d/1h/30m/15m`)
+3. Keep tracking live data quality for opportunity scoring inputs (snapshot/candle/news).
 
 ## Release Sync Requirements
 
@@ -53,7 +49,7 @@ After every successful publish or repository push flow, update this file with at
 
 ## Current Snapshot
 
-- Completed This Release: Integrated release entrypoint, 30m interval support, SAR+EMA144 strategy, change_percent fallback, and RSS news aggregation with frontend wiring and tests.
-- Remaining Work: Observe production deployment health and perform post-deploy smoke checks for strategy/news/research pages.
-- Recommended Next Step: Verify Vercel deployment from latest commit and run quick live endpoint checks.
-- Latest Release Marker: $ReleaseMarker
+- Completed This Release: Completed opportunity-engine integration on homepage (`single board flow`), cleaned active UI routes from encoding corruption, unified strategy metadata source into `strategies-clean.ts`, added four institutional strategy templates end-to-end, and cleaned opportunity reason text in backend service.
+- Remaining Work: Push current commit batch, confirm Vercel deploy status, and run one production smoke pass on opportunities + strategy lab + stock research pages.
+- Recommended Next Step: Trigger official publish flow, then validate live responses from `/api/markets/opportunities?markets=HK,CN&limit=60`.
+- Latest Release Marker: 2026-04-15T13:45:00+08:00 pending-push

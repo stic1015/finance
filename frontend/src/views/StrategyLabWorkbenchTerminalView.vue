@@ -45,32 +45,6 @@ const visibleTradeRows = computed(() => {
   return latestRun.value.trade_log.filter((row) => row.month === selectedMonth.value)
 })
 const latestMetrics = computed(() => latestRun.value?.metrics ?? null)
-const runHeadline = computed(() => {
-  if (!latestMetrics.value || !latestRun.value) {
-    return localeStore.locale === 'zh-CN'
-      ? '先配置模板并运行一轮回测，再进入解释和比较。'
-      : 'Configure a template and run a backtest before moving into explanation and comparison.'
-  }
-  if ((latestRun.value.excess_return ?? 0) > 0) {
-    return localeStore.locale === 'zh-CN'
-      ? '当前结果跑赢基准，先看交易点和月度解释是否一致。'
-      : 'This run is ahead of the benchmark. Check whether trade markers and monthly explanations agree.'
-  }
-  return localeStore.locale === 'zh-CN'
-    ? '当前结果还不够强，优先复盘回撤和月度交易节奏。'
-    : 'This run is still fragile. Review drawdown and monthly trade rhythm first.'
-})
-const activeMonthNote = computed(() => {
-  if (!activeMonth.value) {
-    return localeStore.locale === 'zh-CN'
-      ? '先看总曲线，再按月份切入解释。'
-      : 'Start from the full equity curve, then drill down by month.'
-  }
-  return localeStore.locale === 'zh-CN'
-    ? `${activeMonth.value.month} 以 ${dominantAction(activeMonth.value)} 为主，交易 ${activeMonth.value.trade_count} 次。`
-    : `${activeMonth.value.month} was led by ${dominantAction(activeMonth.value)} with ${activeMonth.value.trade_count} trades.`
-})
-
 const uiRunHeadline = computed(() => {
   if (!latestMetrics.value || !latestRun.value) {
     return localeStore.locale === 'zh-CN'

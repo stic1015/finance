@@ -1,0 +1,2 @@
+"""Opportunity discovery service."""
+

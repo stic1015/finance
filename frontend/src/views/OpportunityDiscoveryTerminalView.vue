@@ -6,12 +6,12 @@ import AlertCenter from '@/components/AlertCenter.vue'
 import MetricTile from '@/components/MetricTile.vue'
 import NewsCard from '@/components/NewsCard.vue'
 import ProviderBadge from '@/components/ProviderBadge.vue'
-import RankedSymbolTableClean from '@/components/RankedSymbolTableClean.vue'
 import SectionPanel from '@/components/SectionPanel.vue'
 import { useLocaleStore } from '@/stores/locale'
 import { useSystemStore } from '@/stores/system'
 import { useWatchStore } from '@/stores/watch'
-import type { MarketOverview, NewsFeedResponse } from '@/types'
+import type { MarketOpportunities, MarketOverview, OpportunityAction } from '@/types'
+import type { NewsFeedResponse } from '@/types'
 import { formatMarketPercent } from '@/utils/format'
 import { buildLocalizedProviderBadgeLabel, buildLocalizedRuntimeSummary, translateStatus } from '@/utils/presentation'
 
@@ -20,23 +20,23 @@ const systemStore = useSystemStore()
 const watchStore = useWatchStore()
 
 const overview = ref<MarketOverview | null>(null)
+const opportunities = ref<MarketOpportunities | null>(null)
 const marketBriefs = ref<NewsFeedResponse | null>(null)
-const loadingOverview = ref(false)
-const overviewError = ref('')
+
+const loading = ref(false)
+const error = ref('')
 const loadingBriefs = ref(false)
 const briefsError = ref('')
-const filter = ref<'all' | 'live' | 'news' | 'backtest'>('all')
+const actionFilter = ref<'all' | OpportunityAction>('all')
+
+const scanLimit = 60
 
 async function loadOverview() {
-  loadingOverview.value = true
-  overviewError.value = ''
-  try {
-    overview.value = await apiGet<MarketOverview>('/api/markets/overview')
-  } catch (err) {
-    overviewError.value = err instanceof Error ? err.message : localeStore.t('common.loading')
-  } finally {
-    loadingOverview.value = false
-  }
+  overview.value = await apiGet<MarketOverview>('/api/markets/overview')
+}
+
+async function loadOpportunities() {
+  opportunities.value = await apiGet<MarketOpportunities>(`/api/markets/opportunities?markets=HK,CN&limit=${scanLimit}`)
 }
 
 async function loadBriefs() {
@@ -51,113 +51,86 @@ async function loadBriefs() {
   }
 }
 
+async function loadAll() {
+  loading.value = true
+  error.value = ''
+  try {
+    await Promise.all([loadOverview(), loadOpportunities(), loadBriefs()])
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : localeStore.t('common.loading')
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
-  void loadOverview()
-  void loadBriefs()
+  void loadAll()
   if (!systemStore.health) {
     void systemStore.loadHealth()
   }
 })
 
-const sections = computed(() => overview.value?.sections.filter((section) => section.region !== 'US') ?? [])
-const watchlist = computed(() => overview.value?.watchlist ?? [])
 const briefItems = computed(() => marketBriefs.value?.items ?? [])
 const runtimeSummary = computed(() => (systemStore.health ? buildLocalizedRuntimeSummary(systemStore.health) : ''))
-
-const filteredWatchlist = computed(() =>
-  watchlist.value.filter((item) => {
-    if (filter.value === 'live') return item.source_status === 'live'
-    if (filter.value === 'news') {
-      return briefItems.value.some((news) =>
-        news.matched_symbols.some((match) => item.symbol.startsWith(`${match}.`) || item.symbol.startsWith(match)),
-      )
-    }
-    if (filter.value === 'backtest') return item.source_status !== 'unavailable'
-    return true
-  }),
-)
-
-const hotList = computed(() =>
-  [...filteredWatchlist.value].sort((a, b) => Math.abs(b.change_percent) - Math.abs(a.change_percent)).slice(0, 30),
-)
-const movers = computed(() =>
-  [...filteredWatchlist.value].sort((a, b) => b.change_percent - a.change_percent).slice(0, 30),
-)
-const sectorStrength = computed(() =>
-  sections.value.map((section) => ({
-    region: section.region,
-    title: section.title,
-    source_status: section.source_status,
-    avg_change:
-      section.metrics.reduce((sum, metric) => sum + metric.change_percent, 0) / Math.max(section.metrics.length, 1),
-  })),
-)
-
-const liveCount = computed(() => watchlist.value.filter((item) => item.source_status === 'live').length)
-const strongestRegion = computed(() =>
-  [...sectorStrength.value].sort((a, b) => Math.abs(b.avg_change) - Math.abs(a.avg_change))[0] ?? null,
-)
-const actionBoard = computed(() =>
-  [...filteredWatchlist.value]
-    .sort((a, b) => Math.abs(b.change_percent) - Math.abs(a.change_percent))
-    .slice(0, 6)
-    .map((item) => {
-      const relatedBrief = briefItems.value.find((news) =>
-        news.matched_symbols.some((match) => item.symbol.startsWith(`${match}.`) || item.symbol.startsWith(match)),
-      )
-      return {
-        ...item,
-        note: relatedBrief
-          ? relatedBrief.title
-          : item.source_status === 'live'
-            ? localeStore.locale === 'zh-CN'
-              ? '实时行情可直接进入研究页确认。'
-              : 'Live quote available for immediate research follow-up.'
-            : localeStore.locale === 'zh-CN'
-              ? '优先核对数据状态，再决定是否加入观察。'
-              : 'Validate feed status before adding it to your watch flow.',
-      }
-    }),
-)
 const watchGroupPreview = computed(() => watchStore.groups.slice(0, 4))
+const sections = computed(() => overview.value?.sections.filter((section) => section.region !== 'US') ?? [])
+
+const filteredItems = computed(() => {
+  const items = opportunities.value?.items ?? []
+  if (actionFilter.value === 'all') return items
+  return items.filter((item) => item.action === actionFilter.value)
+})
+
+const buyCount = computed(() => opportunities.value?.items.filter((item) => item.action === 'buy').length ?? 0)
+const watchCount = computed(() => opportunities.value?.items.filter((item) => item.action === 'watch').length ?? 0)
+const avoidCount = computed(() => opportunities.value?.items.filter((item) => item.action === 'avoid').length ?? 0)
 
 const summaryTiles = computed(() => [
   {
-    label: localeStore.t('overview.liveCoverage'),
-    value: `${liveCount.value}/${watchlist.value.length || 0}`,
+    label: localeStore.t('overview.universe'),
+    value: String(opportunities.value?.universe_size ?? 0),
   },
   {
-    label: localeStore.t('overview.marketBriefs'),
-    value: String(briefItems.value.length),
+    label: localeStore.t('overview.scanned'),
+    value: String(opportunities.value?.scanned_size ?? 0),
   },
   {
-    label: localeStore.t('overview.watchGroups'),
-    value: String(watchStore.groups.length),
+    label: localeStore.t('overview.actionBuy'),
+    value: String(buyCount.value),
   },
   {
-    label: localeStore.locale === 'zh-CN' ? '主导市场' : 'Leading Region',
-    value: strongestRegion.value?.region ?? '-',
-    delta: strongestRegion.value ? formatMarketPercent(strongestRegion.value.avg_change) : undefined,
-    positive: strongestRegion.value ? strongestRegion.value.avg_change >= 0 : null,
+    label: localeStore.t('overview.actionWatch'),
+    value: String(watchCount.value),
   },
 ])
+
+function actionLabel(action: OpportunityAction) {
+  if (action === 'buy') return localeStore.t('overview.actionBuy')
+  if (action === 'watch') return localeStore.t('overview.actionWatch')
+  return localeStore.t('overview.actionAvoid')
+}
+
+function actionClass(action: OpportunityAction) {
+  if (action === 'buy') return 'status-positive'
+  if (action === 'watch') return 'status-neutral'
+  return 'status-negative'
+}
 </script>
 
 <template>
   <div class="overview-layout">
-    <section v-if="overview" class="pulse-hero panel">
+    <section v-if="opportunities" class="pulse-hero panel">
       <div class="pulse-copy">
         <div class="eyebrow">{{ localeStore.t('overview.eyebrow') }}</div>
-        <h2>{{ localeStore.t('overview.opportunityBoard') }}</h2>
-        <p>{{ localeStore.t('overview.description') }}</p>
+        <h2>{{ localeStore.t('overview.singleBoardTitle') }}</h2>
+        <p>{{ localeStore.t('overview.singleBoardSubtitle') }}</p>
         <div class="pulse-meta">
           <ProviderBadge
-            :label="buildLocalizedProviderBadgeLabel(overview.provider, overview.source_status)"
-            :status="overview.source_status"
+            :label="buildLocalizedProviderBadgeLabel(opportunities.provider, opportunities.source_status)"
+            :status="opportunities.source_status"
           />
-          <span class="mono">
-            {{ localeStore.t('overview.updatedAt') }} {{ new Date(overview.generated_at).toLocaleString() }}
-          </span>
+          <span class="mono">{{ localeStore.t('overview.updatedAt') }} {{ new Date(opportunities.generated_at).toLocaleString() }}</span>
+          <span class="mono">{{ localeStore.t('overview.refreshHint') }}</span>
           <span class="mono">{{ runtimeSummary }}</span>
         </div>
       </div>
@@ -166,102 +139,51 @@ const summaryTiles = computed(() => [
       </div>
     </section>
 
-    <div v-if="loadingOverview" class="panel empty-shell">{{ localeStore.t('common.loading') }}</div>
-    <div v-else-if="overviewError" class="panel empty-shell error">{{ overviewError }}</div>
+    <div v-if="loading" class="panel empty-shell">{{ localeStore.t('common.loading') }}</div>
+    <div v-else-if="error" class="panel empty-shell error">{{ error }}</div>
 
-    <template v-else-if="overview">
+    <template v-else-if="opportunities">
       <div class="overview-main-grid">
         <div class="main-column">
-          <SectionPanel :title="localeStore.t('overview.opportunityBoard')" :subtitle="localeStore.t('common.discoverOpportunities')">
+          <SectionPanel :title="localeStore.t('overview.singleBoardTitle')" :subtitle="localeStore.t('common.discoverOpportunities')">
             <template #actions>
               <div class="filter-group">
-                <button type="button" class="interactive-chip" :class="{ active: filter === 'all' }" @click="filter = 'all'">{{ localeStore.t('common.all') }}</button>
-                <button type="button" class="interactive-chip" :class="{ active: filter === 'live' }" @click="filter = 'live'">{{ localeStore.t('overview.onlyRealtime') }}</button>
-                <button type="button" class="interactive-chip" :class="{ active: filter === 'news' }" @click="filter = 'news'">{{ localeStore.t('overview.onlyWithNews') }}</button>
-                <button type="button" class="interactive-chip" :class="{ active: filter === 'backtest' }" @click="filter = 'backtest'">{{ localeStore.t('overview.onlyBacktestReady') }}</button>
+                <button type="button" class="interactive-chip" :class="{ active: actionFilter === 'all' }" @click="actionFilter = 'all'">{{ localeStore.t('common.all') }}</button>
+                <button type="button" class="interactive-chip" :class="{ active: actionFilter === 'buy' }" @click="actionFilter = 'buy'">{{ localeStore.t('overview.actionBuy') }}</button>
+                <button type="button" class="interactive-chip" :class="{ active: actionFilter === 'watch' }" @click="actionFilter = 'watch'">{{ localeStore.t('overview.actionWatch') }}</button>
+                <button type="button" class="interactive-chip" :class="{ active: actionFilter === 'avoid' }" @click="actionFilter = 'avoid'">{{ localeStore.t('overview.actionAvoid') }}</button>
               </div>
             </template>
 
-            <div class="board-shell">
-              <div class="pulse-strip">
-                <article v-for="sector in sectorStrength" :key="sector.region" class="sector-card glass-line">
-                  <div class="sector-top">
-                    <div>
-                      <div class="eyebrow">{{ sector.region }}</div>
-                      <strong>{{ sector.title }}</strong>
-                    </div>
-                    <ProviderBadge :label="translateStatus(sector.source_status)" :status="sector.source_status" />
-                  </div>
-                  <div :class="sector.avg_change >= 0 ? 'status-positive sector-value' : 'status-negative sector-value'">
-                    {{ formatMarketPercent(sector.avg_change) }}
-                  </div>
-                </article>
-              </div>
-
-              <div class="board-layout">
-                <div class="board-main">
-                  <div class="board-intro glass-line">
-                    <div>
-                      <div class="eyebrow">{{ localeStore.locale === 'zh-CN' ? '主判断' : 'Primary Read' }}</div>
-                      <strong>{{ strongestRegion ? strongestRegion.title : (localeStore.locale === 'zh-CN' ? '等待市场脉冲数据' : 'Waiting for market pulse') }}</strong><!--
-                        {{
-                          strongestRegion
-                            ? `${strongestRegion.title} ${localeStore.locale === 'zh-CN' ? '正在主导今日节奏' : 'is setting today\\'s tone'}`
-                            : localeStore.locale === 'zh-CN'
-                              ? '等待市场脉冲数据'
-                              : 'Waiting for market pulse'
-                        }}
-                      -->
-                    </div>
-                    <p>
-                      {{
-                        localeStore.locale === 'zh-CN'
-                          ? '先从主榜单锁定候选，再用右侧动作区和快讯确认是否进入研究、观察或预警。'
-                          : 'Use the board to lock candidates first, then validate the next move with actions and briefs.'
-                      }}
-                    </p>
-                  </div>
-                  <RankedSymbolTableClean :items="hotList" />
-                </div>
-
-                <aside class="action-rail">
-                  <article v-for="item in actionBoard" :key="item.symbol" class="action-card panel">
-                    <div class="action-head">
-                      <div>
-                        <div class="eyebrow">{{ item.symbol }}</div>
-                        <strong>{{ item.display_name }}</strong>
-                      </div>
-                      <span :class="item.change_percent >= 0 ? 'status-positive' : 'status-negative'">
-                        {{ formatMarketPercent(item.change_percent) }}
-                      </span>
-                    </div>
-                    <p>{{ item.note }}</p>
-                    <RouterLink class="action-link" :to="`/stocks/${item.symbol}`">
-                      {{ localeStore.locale === 'zh-CN' ? '进入研究页' : 'Open Research' }}
-                    </RouterLink>
-                  </article>
-                </aside>
-              </div>
-            </div>
-          </SectionPanel>
-
-          <SectionPanel
-            :title="localeStore.locale === 'zh-CN' ? '次级读数' : 'Secondary Read'"
-            :subtitle="localeStore.locale === 'zh-CN' ? '用来确认节奏，不与主榜单抢注意力' : 'Confirmation layer, not a competing main board'"
-          >
-            <div class="secondary-grid">
-              <article v-for="item in movers.slice(0, 6)" :key="item.symbol" class="secondary-card glass-line">
-                <div class="secondary-row">
-                  <div>
-                    <div class="eyebrow">{{ item.symbol }}</div>
-                    <strong>{{ item.display_name }}</strong>
-                  </div>
-                  <span :class="item.change_percent >= 0 ? 'status-positive' : 'status-negative'">
-                    {{ formatMarketPercent(item.change_percent) }}
-                  </span>
-                </div>
-                <span class="mono">{{ localeStore.t('common.volume') }} {{ item.volume }}</span>
-              </article>
+            <div class="board-table panel">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>{{ localeStore.t('common.code') }}</th>
+                    <th>{{ localeStore.t('common.name') }}</th>
+                    <th>{{ localeStore.t('common.action') }}</th>
+                    <th>{{ localeStore.t('overview.score') }}</th>
+                    <th>{{ localeStore.t('overview.riskScore') }}</th>
+                    <th>{{ localeStore.t('overview.reasons') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in filteredItems" :key="item.symbol">
+                    <td>{{ index + 1 }}</td>
+                    <td class="mono">
+                      <RouterLink class="symbol-link" :to="`/stocks/${item.symbol}`">{{ item.symbol }}</RouterLink>
+                    </td>
+                    <td>
+                      <RouterLink class="name-link" :to="`/stocks/${item.symbol}`">{{ item.display_name }}</RouterLink>
+                    </td>
+                    <td><span class="action-chip" :class="actionClass(item.action)">{{ actionLabel(item.action) }}</span></td>
+                    <td>{{ item.score.toFixed(1) }}</td>
+                    <td>{{ item.risk_score.toFixed(1) }}</td>
+                    <td class="reason-cell">{{ item.reasons.slice(0, 2).join(' | ') }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </SectionPanel>
         </div>
@@ -285,6 +207,7 @@ const summaryTiles = computed(() => [
                 :label="localeStore.t('overview.cnSession')"
                 :value="translateStatus(sections.find((item) => item.region === 'CN')?.source_status ?? 'unavailable')"
               />
+              <MetricTile :label="localeStore.t('overview.actionAvoid')" :value="String(avoidCount)" />
             </div>
           </SectionPanel>
 
@@ -298,9 +221,7 @@ const summaryTiles = computed(() => [
                 <p class="muted">{{ group.symbols.join(' / ') }}</p>
               </article>
             </div>
-            <div v-else class="tool-empty">
-              {{ localeStore.locale === 'zh-CN' ? '还没有分组观察池，先从主榜单挑选候选。' : 'No watch groups yet. Start by selecting candidates from the board.' }}
-            </div>
+            <div v-else class="tool-empty">No watch groups yet. Start from high-score candidates above.</div>
           </SectionPanel>
 
           <SectionPanel :title="localeStore.t('overview.marketBriefs')" :subtitle="localeStore.t('overview.briefsAsync')">
@@ -322,9 +243,7 @@ const summaryTiles = computed(() => [
 .pulse-metrics,
 .metrics-grid,
 .news-grid,
-.watchlist-grid,
-.pulse-strip,
-.secondary-grid {
+.watchlist-grid {
   display: grid;
   gap: 20px;
 }
@@ -383,98 +302,68 @@ const summaryTiles = computed(() => [
   gap: 22px;
 }
 
-.board-shell,
-.board-main,
-.action-rail {
-  display: grid;
-  gap: 18px;
+.board-table {
+  padding: 12px;
+  overflow: auto;
+  max-height: 780px;
 }
 
-.pulse-strip {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.sector-card,
-.secondary-card,
-.watch-card,
-.board-intro {
-  padding: 16px;
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  white-space: nowrap;
 }
 
-.sector-top,
-.secondary-row,
-.action-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+th {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-.sector-card strong,
-.secondary-card strong,
-.watch-card strong,
-.board-intro strong,
-.action-card strong {
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.sector-value {
-  font-size: 1.7rem;
-  font-family: 'Chakra Petch', sans-serif;
-}
-
-.board-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 18px;
-}
-
-.board-intro {
-  display: grid;
-  gap: 10px;
-}
-
-.board-intro p,
-.action-card p {
-  margin: 0;
+.reason-cell {
+  white-space: normal;
+  min-width: 280px;
   color: var(--text-secondary);
-  line-height: 1.55;
 }
 
-.action-card {
-  padding: 18px;
-  display: grid;
-  gap: 14px;
-}
-
-.action-link {
+.symbol-link,
+.name-link {
   display: inline-flex;
   align-items: center;
-  width: fit-content;
-  min-height: 38px;
-  padding: 8px 14px;
+  min-height: 24px;
+}
+
+.symbol-link {
+  color: var(--accent);
+}
+
+.name-link {
+  font-weight: 500;
+}
+
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-neutral {
   color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.metrics-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.secondary-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.secondary-card {
-  display: grid;
-  gap: 14px;
-}
-
-.secondary-card span {
-  color: var(--text-muted);
-  font-size: 0.76rem;
+  border-color: rgba(70, 212, 255, 0.45);
+  background: rgba(70, 212, 255, 0.12);
 }
 
 .filter-group {
@@ -484,6 +373,7 @@ const summaryTiles = computed(() => [
 }
 
 .watch-card {
+  padding: 16px;
   display: grid;
   gap: 10px;
 }
@@ -499,16 +389,8 @@ const summaryTiles = computed(() => [
 @media (max-width: 1200px) {
   .pulse-hero,
   .overview-main-grid,
-  .board-layout,
-  .secondary-grid,
   .pulse-metrics,
   .metrics-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 860px) {
-  .pulse-strip {
     grid-template-columns: 1fr;
   }
 }

@@ -48,6 +48,34 @@ def validate_strategy_params(strategy: str, params: dict) -> dict:
             raise ValueError("sar_step must be greater than 0.")
         if merged["sar_max"] < merged["sar_step"]:
             raise ValueError("sar_max must be greater than or equal to sar_step.")
+    if strategy == "ema_adx_trend_follow":
+        if merged["fast_ema"] >= merged["slow_ema"]:
+            raise ValueError("fast_ema must be smaller than slow_ema.")
+        if merged["adx_window"] < 5:
+            raise ValueError("adx_window must be at least 5.")
+        if merged["adx_threshold"] <= 0:
+            raise ValueError("adx_threshold must be greater than 0.")
+    if strategy == "volatility_contraction_breakout":
+        if merged["contraction_window"] >= merged["lookback"]:
+            raise ValueError("contraction_window must be smaller than lookback.")
+        if merged["breakout_window"] < 5:
+            raise ValueError("breakout_window must be at least 5.")
+        if merged["volatility_threshold"] <= 0:
+            raise ValueError("volatility_threshold must be greater than 0.")
+    if strategy == "keltner_atr_breakout":
+        if merged["ema_window"] < 5:
+            raise ValueError("ema_window must be at least 5.")
+        if merged["atr_window"] < 5:
+            raise ValueError("atr_window must be at least 5.")
+        if merged["atr_multiplier"] <= 0:
+            raise ValueError("atr_multiplier must be greater than 0.")
+    if strategy == "rsi_trend_pullback":
+        if merged["trend_window"] < 10:
+            raise ValueError("trend_window must be at least 10.")
+        if merged["rsi_period"] < 2:
+            raise ValueError("rsi_period must be at least 2.")
+        if merged["pullback_floor"] >= merged["pullback_ceiling"]:
+            raise ValueError("pullback_floor must be smaller than pullback_ceiling.")
     return merged
 
 

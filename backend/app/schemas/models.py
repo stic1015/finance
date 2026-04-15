@@ -19,6 +19,10 @@ StrategyName = Literal[
     "volume_price_breakout_risk_budget",
     "multi_factor_scoring",
     "sar_ema144_breakout",
+    "ema_adx_trend_follow",
+    "volatility_contraction_breakout",
+    "keltner_atr_breakout",
+    "rsi_trend_pullback",
 ]
 
 
@@ -114,6 +118,30 @@ class MarketOverview(BaseModel):
     sections: list[OverviewSection]
     top_news: list[NewsItem]
     watchlist: list[MarketSnapshot]
+
+
+OpportunityAction = Literal["buy", "watch", "avoid"]
+
+
+class OpportunityItem(BaseModel):
+    symbol: str
+    display_name: str
+    price: float
+    change_percent: float
+    action: OpportunityAction
+    score: float
+    risk_score: float
+    reasons: list[str] = Field(default_factory=list)
+
+
+class MarketOpportunityResponse(BaseModel):
+    generated_at: datetime
+    refresh_interval_sec: int
+    provider: str
+    source_status: SourceStatus
+    universe_size: int
+    scanned_size: int
+    items: list[OpportunityItem] = Field(default_factory=list)
 
 
 class StrategyDefinition(BaseModel):

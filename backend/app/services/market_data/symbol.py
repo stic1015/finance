@@ -20,6 +20,18 @@ KNOWN_DISPLAY_NAMES = {
 }
 
 
+# Override any corrupted literal block above with clean ASCII labels.
+KNOWN_DISPLAY_NAMES = {
+    "US.AAPL": "Apple",
+    "US.MSFT": "Microsoft",
+    "US.NVDA": "NVIDIA",
+    "HK.00700": "Tencent",
+    "HK.09988": "Alibaba",
+    "SH.600519": "Kweichow Moutai",
+    "SZ.300750": "CATL",
+}
+
+
 def normalize_symbol(raw_symbol: str) -> SymbolParts:
     symbol = raw_symbol.strip().upper().replace("/", ".")
     if "." in symbol:

@@ -114,6 +114,56 @@ STRATEGIES: dict[str, StrategyDefinition] = {
         logic_summary="Long-only signal turns on when close exceeds both EMA144 and PSAR trend support.",
         default_params={"ema_window": 144, "sar_step": 0.02, "sar_max": 0.2},
     ),
+    "ema_adx_trend_follow": StrategyDefinition(
+        name="ema_adx_trend_follow",
+        label="EMA + ADX Trend Follow",
+        description="Uses EMA trend alignment and ADX strength confirmation for directional entries.",
+        category="Institutional",
+        style_tags=["trend", "adx", "confirmation"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Long signal requires fast EMA above slow EMA with ADX and directional DI confirmation.",
+        default_params={"fast_ema": 21, "slow_ema": 55, "adx_window": 14, "adx_threshold": 22},
+    ),
+    "volatility_contraction_breakout": StrategyDefinition(
+        name="volatility_contraction_breakout",
+        label="Volatility Contraction Breakout",
+        description="Looks for breakouts after volatility contraction and volume expansion.",
+        category="Institutional",
+        style_tags=["breakout", "volatility", "volume"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Enters only when short volatility contracts, then price breaks out with participation.",
+        default_params={
+            "lookback": 60,
+            "contraction_window": 10,
+            "breakout_window": 20,
+            "volatility_threshold": 0.75,
+        },
+    ),
+    "keltner_atr_breakout": StrategyDefinition(
+        name="keltner_atr_breakout",
+        label="Keltner ATR Breakout",
+        description="Trend breakout using EMA centerline and ATR channel expansion.",
+        category="Institutional",
+        style_tags=["keltner", "atr", "trend"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Activates long exposure when close breaks above upper Keltner band and exits below centerline.",
+        default_params={"ema_window": 34, "atr_window": 20, "atr_multiplier": 1.8},
+    ),
+    "rsi_trend_pullback": StrategyDefinition(
+        name="rsi_trend_pullback",
+        label="RSI Trend Pullback",
+        description="Buys pullbacks in uptrend when RSI cools and then stabilizes.",
+        category="Institutional",
+        style_tags=["pullback", "rsi", "trend"],
+        market_scope=["US", "HK", "SH", "SZ"],
+        logic_summary="Requires trend filter and RSI pullback zone before restoring long exposure.",
+        default_params={
+            "trend_window": 60,
+            "rsi_period": 14,
+            "pullback_floor": 38,
+            "pullback_ceiling": 52,
+        },
+    ),
 }
 
 
@@ -164,6 +214,19 @@ def _parabolic_sar(high: pd.Series, low: pd.Series, step: float, max_step: float
         sar.append(current_sar)
 
     return pd.Series(sar, index=high.index, dtype=float)
+
+
+def _average_true_range(dataframe: pd.DataFrame, window: int) -> pd.Series:
+    close = dataframe["close"]
+    true_range = pd.concat(
+        [
+            dataframe["high"] - dataframe["low"],
+            (dataframe["high"] - close.shift(1)).abs(),
+            (dataframe["low"] - close.shift(1)).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    return true_range.rolling(window).mean()
 
 
 def build_signal_frame(dataframe: pd.DataFrame, strategy: str, params: dict) -> pd.Series:
@@ -294,5 +357,84 @@ def build_signal_frame(dataframe: pd.DataFrame, strategy: str, params: dict) -> 
         psar = _parabolic_sar(dataframe["high"], dataframe["low"], sar_step, sar_max)
         signal = ((close > ema) & (close > psar)).astype(float)
         return signal.replace(0.0, pd.NA).ffill().fillna(0.0)
+
+    if strategy == "ema_adx_trend_follow":
+        fast_ema = int(params.get("fast_ema", 21))
+        slow_ema = int(params.get("slow_ema", 55))
+        adx_window = int(params.get("adx_window", 14))
+        adx_threshold = float(params.get("adx_threshold", 22))
+
+        ema_fast = close.ewm(span=fast_ema, adjust=False).mean()
+        ema_slow = close.ewm(span=slow_ema, adjust=False).mean()
+
+        up_move = dataframe["high"].diff()
+        down_move = -dataframe["low"].diff()
+        plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0.0)
+        minus_dm = down_move.where((down_move > up_move) & (down_move > 0), 0.0)
+        atr = _average_true_range(dataframe, adx_window).replace(0, pd.NA)
+        plus_di = 100 * plus_dm.rolling(adx_window).sum() / atr
+        minus_di = 100 * minus_dm.rolling(adx_window).sum() / atr
+        dx = (100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, pd.NA)).fillna(0.0)
+        adx = dx.rolling(adx_window).mean().fillna(0.0)
+
+        signal = (
+            (ema_fast > ema_slow)
+            & (adx >= adx_threshold)
+            & (plus_di.fillna(0.0) > minus_di.fillna(0.0))
+        ).astype(float)
+        return signal.replace(0.0, pd.NA).ffill().fillna(0.0)
+
+    if strategy == "volatility_contraction_breakout":
+        lookback = int(params.get("lookback", 60))
+        contraction_window = int(params.get("contraction_window", 10))
+        breakout_window = int(params.get("breakout_window", 20))
+        volatility_threshold = float(params.get("volatility_threshold", 0.75))
+
+        returns = close.pct_change()
+        short_vol = returns.rolling(contraction_window).std()
+        long_vol = returns.rolling(lookback).std().replace(0, pd.NA)
+        vol_ratio = (short_vol / long_vol).fillna(volatility_threshold + 1.0)
+        contraction = vol_ratio <= volatility_threshold
+        breakout = close > close.rolling(breakout_window).max().shift(1)
+        volume_confirm = volume > volume.rolling(20).mean()
+
+        signal = (contraction & breakout & volume_confirm).astype(float)
+        return signal.replace(0.0, pd.NA).ffill().fillna(0.0)
+
+    if strategy == "keltner_atr_breakout":
+        ema_window = int(params.get("ema_window", 34))
+        atr_window = int(params.get("atr_window", 20))
+        atr_multiplier = float(params.get("atr_multiplier", 1.8))
+
+        ema = close.ewm(span=ema_window, adjust=False).mean()
+        atr = _average_true_range(dataframe, atr_window)
+        upper = ema + atr_multiplier * atr
+
+        entry = close > upper
+        exit_signal = close < ema
+        signal = pd.Series(0.0, index=dataframe.index)
+        signal[entry] = 1.0
+        signal[exit_signal] = 0.0
+        return signal.ffill().fillna(0.0)
+
+    if strategy == "rsi_trend_pullback":
+        trend_window = int(params.get("trend_window", 60))
+        rsi_period = int(params.get("rsi_period", 14))
+        pullback_floor = float(params.get("pullback_floor", 38))
+        pullback_ceiling = float(params.get("pullback_ceiling", 52))
+
+        trend_filter = close > close.ewm(span=trend_window, adjust=False).mean()
+        delta = close.diff()
+        gains = delta.clip(lower=0).rolling(rsi_period).mean()
+        losses = -delta.clip(upper=0).rolling(rsi_period).mean()
+        rs = gains / losses.replace(0, pd.NA)
+        rsi = 100 - (100 / (1 + rs.fillna(0)))
+
+        entry = trend_filter & (rsi >= pullback_floor) & (rsi <= pullback_ceiling) & (close > close.shift(1))
+        exit_signal = close < close.ewm(span=trend_window, adjust=False).mean()
+        signal = pd.Series(0.0, index=dataframe.index)
+        signal[entry] = 1.0
+        signal[exit_signal] = 0.0
+        return signal.ffill().fillna(0.0)
 
     raise ValueError(f"Unsupported strategy: {strategy}")

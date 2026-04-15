@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Query, Request
 
 router = APIRouter()
 
@@ -18,3 +18,15 @@ async def get_market_briefs(request: Request):
     news_service = request.app.state.news_service
     briefs = await news_service.get_market_briefs()
     return {"data": briefs}
+
+
+@router.get("/markets/opportunities")
+async def get_market_opportunities(
+    request: Request,
+    markets: str = Query(default="HK,CN"),
+    limit: int = Query(default=50, ge=10, le=200),
+):
+    opportunity_service = request.app.state.opportunity_service
+    market_list = [token.strip().upper() for token in markets.split(",") if token.strip()]
+    opportunities = await opportunity_service.get_opportunities(market_list, limit=limit)
+    return {"data": opportunities}

@@ -65,7 +65,18 @@ export const zhCN = {
     briefsAsync: '\u65b0\u95fb\u5f02\u6b65\u8865\u8f7d',
     briefsLoading: '\u6b63\u5728\u8865\u8f7d\u5e02\u573a\u5feb\u8baf...',
     briefsError: '\u5e02\u573a\u5feb\u8baf\u6682\u65f6\u4e0d\u53ef\u7528',
-    briefsEmpty: '\u5f53\u524d\u6682\u65e0\u53ef\u7528\u7684\u5e02\u573a\u5feb\u8baf\u3002'
+    briefsEmpty: '\u5f53\u524d\u6682\u65e0\u53ef\u7528\u7684\u5e02\u573a\u5feb\u8baf\u3002',
+    singleBoardTitle: '\u53ef\u6267\u884c\u673a\u4f1a\u699c\u5355',
+    singleBoardSubtitle: '\u4e00\u4e2a\u4e3b\u699c\u5355\u76f4\u63a5\u7ed9\u51fa\u4e70\u5165/\u89c2\u5bdf/\u56de\u907f\u52a8\u4f5c',
+    actionBuy: '\u4e70\u5165',
+    actionWatch: '\u89c2\u5bdf',
+    actionAvoid: '\u56de\u907f',
+    score: '\u7efc\u5408\u5206',
+    riskScore: '\u98ce\u9669\u5206',
+    reasons: '\u4e3a\u4ec0\u4e48\u503c\u5f97\u770b',
+    universe: '\u80a1\u7968\u6c60',
+    scanned: '\u5df2\u626b\u63cf',
+    refreshHint: '\u6bcf 5 \u5206\u949f\u81ea\u52a8\u5237\u65b0'
   },
   research: {
     priceStructure: '\u4ef7\u683c\u7ed3\u6784',
